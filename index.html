@@ -1,0 +1,2860 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ห้างทองสุดใจ - ระบบรับจำนำ</title>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script>
+window._fbConfig = {
+  apiKey: "AIzaSyCrp5xMp8Rdf4Lm9lq1zLS7U0q9PlmMPCU",
+  authDomain: "sjgold-f0d84.firebaseapp.com",
+  projectId: "sjgold-f0d84",
+  storageBucket: "sjgold-f0d84.firebasestorage.app",
+  messagingSenderId: "125035356613",
+  appId: "1:125035356613:web:e15764909b433f2d8a6bac"
+};
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Noto+Serif+Thai:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #c9a84c; --gold-light: #e8c96a; --gold-dark: #8b6914;
+    --bg: #0f0e0b; --bg2: #1a1810; --bg3: #232015; --card: #1e1c14;
+    --border: #3a3520; --text: #f0e8d0; --text-muted: #9a8f6e;
+    --red: #e05555; --green: #5baa72; --blue: #5b8faa;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Sarabun',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+  .app { display:flex; min-height:100vh; }
+
+  .sidebar { width:240px; background:var(--bg2); border-right:1px solid var(--border); display:flex; flex-direction:column; position:fixed; height:100vh; z-index:100; }
+  .logo { padding:24px 20px 18px; border-bottom:1px solid var(--border); }
+  .logo-icon { font-size:26px; margin-bottom:6px; }
+  .logo h1 { font-family:'Noto Serif Thai',serif; font-size:16px; font-weight:700; color:var(--gold); line-height:1.3; }
+  .logo p { font-size:11px; color:var(--text-muted); margin-top:3px; }
+  .nav { padding:14px 10px; flex:1; }
+  .nav-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:8px; cursor:pointer; font-size:14px; color:var(--text-muted); transition:all 0.2s; margin-bottom:2px; }
+  .nav-item:hover { background:var(--bg3); color:var(--text); }
+  .nav-item.active { background:rgba(201,168,76,0.15); color:var(--gold); }
+  .nav-item .icon { font-size:16px; width:20px; text-align:center; }
+  .gpw { margin:12px; background:linear-gradient(135deg,rgba(201,168,76,0.15),rgba(201,168,76,0.05)); border:1px solid rgba(201,168,76,0.3); border-radius:10px; padding:14px; }
+  .gpw .lbl { font-size:10px; color:var(--text-muted); margin-bottom:4px; }
+  .gpw .price { font-size:18px; font-weight:700; color:var(--gold); }
+  .gpw .sub { font-size:11px; color:var(--text-muted); margin-top:2px; }
+
+  .main { margin-left:240px; flex:1; padding:28px 32px; }
+  .topbar { display:flex; align-items:center; justify-content:space-between; margin-bottom:28px; }
+  .page-title { font-family:'Noto Serif Thai',serif; font-size:22px; font-weight:700; }
+  .page-title span { color:var(--gold); }
+
+  .btn { padding:10px 20px; border-radius:8px; border:none; cursor:pointer; font-family:'Sarabun',sans-serif; font-size:14px; font-weight:500; transition:all 0.2s; display:inline-flex; align-items:center; gap:6px; }
+  .btn-gold { background:linear-gradient(135deg,var(--gold),var(--gold-dark)); color:#0f0e0b; font-weight:700; }
+  .btn-gold:hover { filter:brightness(1.1); transform:translateY(-1px); box-shadow:0 4px 12px rgba(201,168,76,0.3); }
+  .btn-outline { background:transparent; color:var(--text-muted); border:1px solid var(--border); }
+  .btn-outline:hover { border-color:var(--gold); color:var(--gold); }
+  .btn-sm { padding:6px 12px; font-size:12px; }
+  .btn-red { background:rgba(224,85,85,0.12); color:var(--red); border:1px solid rgba(224,85,85,0.25); }
+
+  .stats { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:28px; }
+  .stat-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px; position:relative; overflow:hidden; }
+  .stat-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; }
+  .stat-card.sg::before { background:linear-gradient(90deg,var(--gold),transparent); }
+  .stat-card.sv::before { background:linear-gradient(90deg,var(--green),transparent); }
+  .stat-card.sr::before { background:linear-gradient(90deg,var(--red),transparent); }
+  .stat-card.sb::before { background:linear-gradient(90deg,var(--blue),transparent); }
+  .stat-label { font-size:12px; color:var(--text-muted); margin-bottom:8px; }
+  .stat-value { font-size:26px; font-weight:700; }
+  .stat-sub { font-size:11px; color:var(--text-muted); margin-top:4px; }
+  .stat-icon { position:absolute; right:16px; top:50%; transform:translateY(-50%); font-size:30px; opacity:0.12; }
+
+  .table-card { background:var(--card); border:1px solid var(--border); border-radius:12px; overflow:hidden; margin-bottom:24px; }
+  .table-header { padding:16px 22px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+  .table-header h3 { font-size:15px; font-weight:600; }
+  table { width:100%; border-collapse:collapse; }
+  th { padding:11px 16px; text-align:left; font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.07em; border-bottom:1px solid var(--border); background:rgba(255,255,255,0.02); }
+  td { padding:12px 16px; font-size:13px; border-bottom:1px solid rgba(58,53,32,0.5); vertical-align:middle; }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:rgba(201,168,76,0.04); }
+  .tno { font-family:monospace; font-size:13px; color:var(--gold); font-weight:700; }
+  .badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; }
+  .b-a { background:rgba(91,170,114,0.15); color:var(--green); }
+  .b-w { background:rgba(224,85,85,0.15); color:var(--red); }
+  .b-e { background:rgba(154,143,110,0.15); color:var(--text-muted); }
+  .b-r { background:rgba(91,143,170,0.15); color:var(--blue); }
+
+  .sw { display:flex; align-items:center; gap:8px; background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:7px 14px; }
+  .sw input { background:none; border:none; outline:none; color:var(--text); font-size:13px; font-family:'Sarabun',sans-serif; width:200px; }
+
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:200; align-items:center; justify-content:center; }
+  .modal-overlay.show { display:flex; }
+  .modal { background:var(--bg2); border:1px solid var(--border); border-radius:16px; width:580px; max-width:96vw; max-height:92vh; overflow-y:auto; }
+  .modal-head { padding:22px 26px 18px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+  .modal-head h2 { font-family:'Noto Serif Thai',serif; font-size:18px; font-weight:700; color:var(--gold); }
+  .close-btn { background:none; border:none; color:var(--text-muted); font-size:20px; cursor:pointer; padding:4px 8px; border-radius:6px; }
+  .close-btn:hover { background:var(--bg3); color:var(--text); }
+  .modal-body { padding:22px 26px; }
+  .modal-foot { padding:18px 26px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:10px; }
+
+  .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .span2 { grid-column:span 2; }
+  label { display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px; font-weight:600; letter-spacing:0.03em; }
+  input[type=text],input[type=number],input[type=date],select,textarea {
+    width:100%; background:var(--bg3); border:1px solid var(--border); border-radius:8px;
+    padding:10px 14px; font-family:'Sarabun',sans-serif; font-size:14px; color:var(--text); outline:none; transition:border-color 0.2s;
+  }
+  input:focus,select:focus,textarea:focus { border-color:var(--gold); }
+  select option { background:var(--bg2); }
+  textarea { resize:vertical; min-height:60px; }
+
+  .chips { display:flex; flex-wrap:wrap; gap:8px; }
+  .chip { padding:7px 14px; border-radius:20px; border:1px solid var(--border); background:var(--bg3); color:var(--text-muted); font-size:13px; cursor:pointer; transition:all 0.15s; font-family:'Sarabun',sans-serif; white-space:nowrap; }
+  .chip:hover { border-color:var(--gold); color:var(--gold); }
+  .chip.sel { background:rgba(201,168,76,0.2); border-color:var(--gold); color:var(--gold); font-weight:600; }
+  .extra-input { display:none; margin-top:8px; }
+  .extra-input.show { display:block; }
+
+  .calc-box { background:linear-gradient(135deg,rgba(201,168,76,0.12),rgba(201,168,76,0.03)); border:1px solid rgba(201,168,76,0.3); border-radius:10px; padding:16px; }
+  .crow { display:flex; justify-content:space-between; font-size:13px; margin-bottom:7px; }
+  .crow:last-child { margin-bottom:0; font-weight:700; color:var(--gold); font-size:15px; padding-top:6px; border-top:1px solid rgba(201,168,76,0.2); }
+  .clbl { color:var(--text-muted); }
+
+  .rate-box { background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:12px 16px; font-size:12px; color:var(--text-muted); line-height:2; }
+  .rate-box strong { color:var(--gold); }
+
+  .alert-banner { background:rgba(224,85,85,0.1); border:1px solid rgba(224,85,85,0.3); border-radius:10px; padding:14px 18px; margin-bottom:20px; display:flex; align-items:center; gap:10px; font-size:13px; }
+
+  /* Action buttons text style */
+  .act-btns { display:flex; flex-wrap:wrap; gap:5px; }
+  .btn-cut { background:rgba(232,160,48,0.12); color:#e8a030; border:1px solid rgba(232,160,48,0.3); }
+  .btn-cut:hover { background:rgba(232,160,48,0.22); }
+  .btn-redeem { background:rgba(91,170,114,0.12); color:var(--green); border:1px solid rgba(91,170,114,0.3); }
+  .btn-redeem:hover { background:rgba(91,170,114,0.22); }
+  .btn-edit { background:rgba(91,143,170,0.12); color:var(--blue); border:1px solid rgba(91,143,170,0.3); }
+  .btn-edit:hover { background:rgba(91,143,170,0.22); }
+  .btn-del { background:rgba(224,85,85,0.12); color:var(--red); border:1px solid rgba(224,85,85,0.25); }
+  .btn-del:hover { background:rgba(224,85,85,0.22); }
+
+  .page { display:none; }
+  .page.active { display:block; animation:fadeIn 0.22s ease; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+
+  @media print {
+    body * { visibility:hidden; }
+    #printArea, #printArea * { visibility:visible; }
+    #printArea { position:fixed; left:0; top:0; width:100%; }
+  }
+  .receipt { background:#fff; color:#000; padding:30px 28px; font-family:'Sarabun',sans-serif; font-size:13px; line-height:1.7; }
+  .receipt h2 { text-align:center; font-size:20px; font-weight:700; }
+  .receipt .rsub { text-align:center; font-size:12px; color:#555; margin-bottom:14px; }
+  .receipt hr { border:none; border-top:1px dashed #bbb; margin:10px 0; }
+  .receipt .tbig { text-align:center; font-size:32px; font-weight:700; letter-spacing:4px; margin:10px 0; font-family:monospace; }
+  .receipt .rrow { display:flex; justify-content:space-between; margin-bottom:3px; }
+  .receipt .rtotal { display:flex; justify-content:space-between; font-weight:700; font-size:15px; margin-top:8px; padding-top:8px; border-top:2px solid #000; }
+  .receipt .rfooter { text-align:center; font-size:11px; color:#888; margin-top:14px; }
+  .itable { width:100%; border-collapse:collapse; margin:8px 0; font-size:12px; }
+  .itable td { border:1px solid #ddd; padding:4px 8px; }
+  .itable thead td { background:#f5f5f5; font-weight:600; text-align:center; }
+
+  /* Scan input */
+  .scan-wrap { display:flex; align-items:center; gap:8px; background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.3); border-radius:8px; padding:7px 14px; }
+  .scan-wrap input { background:none; border:none; outline:none; color:var(--text); font-size:13px; font-family:'Sarabun',sans-serif; width:220px; }
+  .scan-wrap .scan-icon { color:var(--gold); font-size:15px; }
+
+  /* Login */
+  #loginScreen { position:fixed; inset:0; background:var(--bg); z-index:9999; display:flex; align-items:center; justify-content:center; }
+  .login-box { background:var(--bg2); border:1px solid var(--border); border-radius:20px; padding:40px 44px; width:380px; max-width:96vw; text-align:center; }
+  .login-logo { font-size:44px; margin-bottom:12px; }
+  .login-box h1 { font-family:'Noto Serif Thai',serif; font-size:22px; font-weight:700; color:var(--gold); margin-bottom:4px; }
+  .login-box p { font-size:13px; color:var(--text-muted); margin-bottom:28px; }
+  .login-field { text-align:left; margin-bottom:16px; }
+  .login-field label { display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px; font-weight:600; }
+  .login-field input { width:100%; background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:12px 14px; font-family:'Sarabun',sans-serif; font-size:15px; color:var(--text); outline:none; transition:border-color 0.2s; }
+  .login-field input:focus { border-color:var(--gold); }
+  .login-error { background:rgba(224,85,85,0.12); border:1px solid rgba(224,85,85,0.3); border-radius:8px; padding:10px 14px; font-size:13px; color:var(--red); margin-bottom:14px; display:none; }
+  .btn-login { width:100%; padding:13px; font-size:15px; border-radius:10px; margin-top:6px; }
+  .btn-google { width:100%; padding:13px 20px; font-size:15px; border-radius:10px; border:1px solid var(--border); background:var(--bg3); color:var(--text); cursor:pointer; display:flex; align-items:center; justify-content:center; gap:12px; font-family:'Sarabun',sans-serif; font-weight:600; transition:all 0.2s; }
+  .btn-google:hover { border-color:var(--gold); background:rgba(201,168,76,0.08); }
+  .btn-google svg { flex-shrink:0; }
+  .login-divider { display:flex; align-items:center; gap:12px; margin:18px 0; color:var(--text-muted); font-size:12px; }
+  .login-divider::before, .login-divider::after { content:''; flex:1; height:1px; background:var(--border); }
+  .login-user-info { display:flex; align-items:center; gap:10px; background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2); border-radius:10px; padding:10px 14px; margin-bottom:16px; }
+  .login-user-info img { width:36px; height:36px; border-radius:50%; border:2px solid var(--gold); }
+  .login-user-info .uname { font-size:14px; font-weight:600; }
+  .login-user-info .uemail { font-size:11px; color:var(--text-muted); }
+
+  /* Settings page */
+  .settings-section { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:22px 26px; margin-bottom:20px; }
+  .settings-section h3 { font-size:15px; font-weight:600; margin-bottom:16px; color:var(--gold); }
+  .settings-row { display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid rgba(58,53,32,0.5); }
+  .settings-row:last-child { border-bottom:none; }
+  .settings-row-label { font-size:14px; font-weight:500; }
+  .settings-row-sub { font-size:12px; color:var(--text-muted); margin-top:2px; }
+
+  /* Partial redeem items */
+  .item-remove-row { display:flex; align-items:center; gap:8px; background:rgba(224,85,85,0.06); border:1px solid rgba(224,85,85,0.2); border-radius:8px; padding:8px 12px; margin-bottom:6px; font-size:13px; }
+  .item-remove-row input[type=checkbox] { width:16px; height:16px; accent-color:var(--red); cursor:pointer; }
+  .item-qty { width:60px; background:var(--bg3); border:1px solid var(--border); border-radius:6px; padding:4px 8px; font-size:13px; color:var(--text); text-align:center; }
+
+  /* Customer autocomplete */
+  .ac-wrap { position:relative; }
+  .ac-dropdown { display:none; position:absolute; top:100%; left:0; right:0; background:var(--bg2); border:1px solid var(--gold); border-top:none; border-radius:0 0 8px 8px; z-index:300; max-height:200px; overflow-y:auto; box-shadow:0 8px 20px rgba(0,0,0,0.4); }
+  .ac-dropdown.open { display:block; animation:fadeIn 0.12s ease; }
+  .ac-item { padding:9px 14px; font-size:13px; cursor:pointer; color:var(--text); border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .ac-item:last-child { border-bottom:none; }
+  .ac-item:hover, .ac-item.active { background:rgba(201,168,76,0.12); }
+  .ac-name { font-weight:600; color:var(--text); }
+  .ac-phone { font-size:11px; color:var(--text-muted); white-space:nowrap; }
+  .ac-count { font-size:10px; color:var(--text-muted); background:var(--bg3); border-radius:10px; padding:1px 6px; }
+
+  /* Dropdown more menu */
+  .more-wrap { position:relative; display:inline-block; }
+  .more-btn { background:var(--bg3); color:var(--text-muted); border:1px solid var(--border); border-radius:7px; padding:5px 10px; cursor:pointer; font-size:15px; line-height:1; transition:all 0.15s; }
+  .more-btn:hover { border-color:var(--gold); color:var(--gold); background:rgba(201,168,76,0.08); }
+  .more-menu { display:none; position:absolute; right:0; top:calc(100% + 4px); background:var(--bg2); border:1px solid var(--border); border-radius:10px; min-width:140px; z-index:500; box-shadow:0 8px 24px rgba(0,0,0,0.5); overflow:hidden; }
+  .more-menu.open { display:block; animation:fadeIn 0.15s ease; }
+  .more-menu-item { display:flex; align-items:center; gap:8px; padding:10px 14px; font-size:13px; cursor:pointer; color:var(--text-muted); transition:background 0.1s; white-space:nowrap; border:none; background:none; width:100%; font-family:'Sarabun',sans-serif; }
+  .more-menu-item:hover { background:var(--bg3); color:var(--text); }
+  .more-menu-item.danger { color:var(--red); }
+  .more-menu-item.danger:hover { background:rgba(224,85,85,0.1); }
+  .more-menu-sep { border:none; border-top:1px solid var(--border); margin:4px 0; }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
+</head>
+<body>
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">⚜️</div>
+    <h1>ห้างทองสุดใจ</h1>
+    <p>ระบบรับจำนำทอง</p>
+
+    <!-- สถานะ loading -->
+    <div id="loginLoading" style="color:var(--text-muted);font-size:13px;padding:20px 0">⏳ กำลังตรวจสอบ...</div>
+
+    <!-- Google Sign-In -->
+    <div id="loginGoogleBox" style="display:none">
+      <div class="login-error" id="loginError" style="display:none">❌ อีเมลนี้ไม่มีสิทธิ์เข้าใช้งาน</div>
+      <button class="btn-google" onclick="signInWithGoogle()" id="btnGoogleSignIn">
+        <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
+        เข้าสู่ระบบด้วย Google
+      </button>
+      <div style="margin-top:14px;font-size:11px;color:var(--text-muted);text-align:center">เฉพาะบัญชีที่ได้รับอนุญาตเท่านั้น</div>
+    </div>
+
+    <!-- Already signed in but wrong email -->
+    <div id="loginWrongEmail" style="display:none;text-align:center">
+      <div id="loginWrongUser" class="login-user-info" style="justify-content:center"></div>
+      <div style="font-size:13px;color:var(--red);margin-bottom:14px">⛔ บัญชีนี้ไม่มีสิทธิ์เข้าใช้งาน</div>
+      <button class="btn-google" onclick="signOutAndRetry()">
+        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
+        เปลี่ยนบัญชี Google
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="app" id="mainApp" style="display:none">
+
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-icon">⚜️</div>
+    <h1>ห้างทองสุดใจ</h1>
+    <p>ระบบรับจำนำทอง</p>
+  </div>
+  <nav class="nav">
+    <div style="font-size:10px;color:var(--text-muted);padding:4px 12px 6px;letter-spacing:0.08em;text-transform:uppercase">หลัก</div>
+    <div class="nav-item active" onclick="showPage('dashboard')"><span class="icon">📊</span> ภาพรวม</div>
+    <div class="nav-item" onclick="showPage('pawns')"><span class="icon">📋</span> รายการจำนำ</div>
+    <div class="nav-item" onclick="showPage('report')"><span class="icon">📈</span> รายงาน</div>
+
+    <div style="font-size:10px;color:var(--text-muted);padding:12px 12px 6px;letter-spacing:0.08em;text-transform:uppercase">จัดการข้อมูล</div>
+    <div class="nav-item" onclick="showPage('txlog')">
+      <span class="icon">📒</span> ประวัติรายการ
+      <span id="txBadge" style="background:var(--blue);color:#fff;border-radius:10px;padding:1px 7px;font-size:10px;margin-left:auto;display:none"></span>
+    </div>
+    <div class="nav-item" onclick="showPage('trash')">
+      <span class="icon">🗑️</span> ถังขยะ
+      <span id="trashBadge" style="background:var(--text-muted);color:#fff;border-radius:10px;padding:1px 7px;font-size:10px;margin-left:auto;display:none"></span>
+    </div>
+
+    <div style="font-size:10px;color:var(--text-muted);padding:12px 12px 6px;letter-spacing:0.08em;text-transform:uppercase">ระบบ</div>
+    <div class="nav-item" onclick="showPage('settings')"><span class="icon">⚙️</span> ตั้งค่า</div>
+    <div id="sidebarUser" style="margin:8px 8px 0;padding:10px 12px;border-radius:10px;background:rgba(201,168,76,0.06);border:1px solid var(--border);display:none">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <img id="sidebarAvatar" src="" style="width:28px;height:28px;border-radius:50%;border:1px solid var(--gold);display:none">
+        <div>
+          <div id="sidebarName" style="font-size:12px;font-weight:600;color:var(--text)"></div>
+          <div id="sidebarEmail" style="font-size:10px;color:var(--text-muted)"></div>
+        </div>
+      </div>
+      <button onclick="doLogout()" style="width:100%;background:rgba(224,85,85,0.08);border:1px solid rgba(224,85,85,0.2);color:var(--red);border-radius:7px;padding:6px;font-size:12px;cursor:pointer;font-family:'Sarabun',sans-serif">🚪 ออกจากระบบ</button>
+    </div>
+    <!-- Sync Status -->
+    <div id="syncStatus" style="margin:12px 8px 0;padding:8px 12px;border-radius:8px;font-size:11px;display:flex;align-items:center;gap:6px;background:rgba(91,170,114,0.1);border:1px solid rgba(91,170,114,0.25);color:var(--green)">
+      <span id="syncDot" style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;flex-shrink:0"></span>
+      <span id="syncText">เชื่อมต่อแล้ว</span>
+    </div>
+    <input type="file" id="restoreInput" accept=".json" style="display:none" onchange="restoreData(event)">
+    <div id="globalUndoBtn" style="display:none"></div>
+  </nav>
+  <div class="gpw">
+    <div class="lbl">ราคาทอง 96.5% วันนี้</div>
+    <div class="price">฿44,250</div>
+    <div class="sub">อัปเดต: <span id="updateTime"></span></div>
+  </div>
+</aside>
+
+<main class="main">
+
+  <!-- Dashboard -->
+  <div class="page active" id="page-dashboard">
+    <div class="topbar">
+      <div>
+        <div class="page-title">ภาพรวม <span>วันนี้</span></div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px" id="todayDate"></div>
+      </div>
+      <button class="btn btn-gold" onclick="openModal()">➕ รับจำนำใหม่</button>
+    </div>
+
+    <!-- Todo stats -->
+    <div class="stats" style="margin-bottom:20px">
+      <div class="stat-card sr" style="cursor:pointer" onclick="scrollTo('dash_overdue')">
+        <div class="stat-label">เกินกำหนดแล้ว</div>
+        <div class="stat-value" style="color:var(--red)" id="statOverdue">0</div>
+        <div class="stat-sub">รายการ — ติดต่อด่วน!</div>
+        <div class="stat-icon">🚨</div>
+      </div>
+      <div class="stat-card" style="cursor:pointer;--c:#e8a030" onclick="scrollTo('dash_expiring')">
+        <div class="stat-label">ใกล้หมดอายุ (7 วัน)</div>
+        <div class="stat-value" style="color:#e8a030" id="statExpiring">0</div>
+        <div class="stat-sub">รายการ</div>
+        <div class="stat-icon">⏰</div>
+      </div>
+      <div class="stat-card sv">
+        <div class="stat-label">ตัดดอกวันนี้</div>
+        <div class="stat-value" style="color:var(--green)" id="statCutToday">0</div>
+        <div class="stat-sub">รายการ</div>
+        <div class="stat-icon">✂️</div>
+      </div>
+      <div class="stat-card sg">
+        <div class="stat-label">ไถ่ถอนวันนี้</div>
+        <div class="stat-value" style="color:var(--gold)" id="statRedeemToday">0</div>
+        <div class="stat-sub">รายการ</div>
+        <div class="stat-icon">💰</div>
+      </div>
+    </div>
+
+    <!-- เกินกำหนด -->
+    <div id="dash_overdue" class="table-card" style="margin-bottom:20px;border-color:rgba(224,85,85,0.4)">
+      <div class="table-header" style="border-bottom-color:rgba(224,85,85,0.2)">
+        <h3 style="color:var(--red)">🚨 เกินกำหนดแล้ว — ติดต่อลูกค้าด่วน</h3>
+        <span id="dash_overdue_lbl" style="font-size:12px;color:var(--text-muted)"></span>
+      </div>
+      <div id="dash_overdue_content">
+        <div style="text-align:center;color:var(--text-muted);padding:20px;font-size:13px">✅ ไม่มีตั๋วเกินกำหนด</div>
+      </div>
+    </div>
+
+    <!-- ใกล้หมดอายุ -->
+    <div id="dash_expiring" class="table-card" style="margin-bottom:20px;border-color:rgba(232,160,48,0.3)">
+      <div class="table-header" style="border-bottom-color:rgba(232,160,48,0.15)">
+        <h3 style="color:#e8a030">⏰ ใกล้หมดอายุ ภายใน 7 วัน</h3>
+        <span id="dash_expiring_lbl" style="font-size:12px;color:var(--text-muted)"></span>
+      </div>
+      <div id="dash_expiring_content">
+        <div style="text-align:center;color:var(--text-muted);padding:20px;font-size:13px">✅ ไม่มีตั๋วใกล้หมดอายุ</div>
+      </div>
+    </div>
+
+    <!-- รายการวันนี้ -->
+    <div class="table-card">
+      <div class="table-header">
+        <h3>📋 รายการล่าสุด</h3>
+        <div style="display:flex;gap:10px;align-items:center">
+          <div class="sw">🔍 <input type="text" id="dashSearch" placeholder="ค้นหาชื่อ / เลขตั๋ว..." oninput="renderRecentTable()"></div>
+          <button class="btn btn-outline btn-sm" onclick="showPage('pawns')">ดูทั้งหมด →</button>
+        </div>
+      </div>
+      <table><thead><tr><th>เลขตั๋ว</th><th>ชื่อ-นามสกุล</th><th>รายการทอง</th><th>น้ำหนัก</th><th>จำนวนเงิน</th><th>ครบกำหนด</th><th>สถานะ</th></tr></thead>
+      <tbody id="recentTable"><tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:30px">ยังไม่มีรายการ</td></tr></tbody></table>
+    </div>
+  </div>
+
+  <!-- Pawns -->
+  <div class="page" id="page-pawns">
+    <div class="topbar">
+      <div class="page-title">รายการจำนำ <span>ทั้งหมด</span></div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <div class="sw">🔍 <input type="text" id="searchInput" placeholder="ค้นหาชื่อ / เลขตั๋ว..." oninput="renderFullTable()"></div>
+          <div class="scan-wrap"><span class="scan-icon">📷</span><input type="text" id="scanInput" placeholder="สแกนบาร์โค้ด..." onchange="scanBarcode(this.value)" autocomplete="off"></div>
+        <button class="btn btn-gold" onclick="openModal()">➕ รับจำนำใหม่</button>
+      </div>
+    </div>
+    <div class="table-card">
+      <table><thead><tr><th>เลขตั๋ว</th><th>ชื่อ-นามสกุล</th><th>รายการทอง</th><th>น้ำหนัก</th><th>จำนวนเงิน</th><th>วันที่จำนำ</th><th>ครบกำหนด</th><th>เบอร์โทร</th><th>สถานะ</th><th>หมายเหตุ</th><th>จัดการ</th></tr></thead>
+      <tbody id="fullTable"><tr><td colspan="11" style="text-align:center;color:var(--text-muted);padding:30px">ยังไม่มีรายการ</td></tr></tbody></table>
+    </div>
+  </div>
+
+  <!-- Trash -->
+  <div class="page" id="page-trash">
+    <div class="topbar">
+      <div class="page-title">ถังขยะ <span>รายการที่ลบแล้ว</span></div>
+      <button class="btn btn-red btn-sm" onclick="emptyTrash()" id="emptyBtn" style="display:none">🗑️ ล้างถังขยะ</button>
+    </div>
+    <div id="trashContent"><div style="text-align:center;color:var(--text-muted);padding:60px">🗑️ ถังขยะว่างเปล่า</div></div>
+  </div>
+
+  <!-- ประวัติรายการ (Transaction Log) -->
+  <div class="page" id="page-txlog">
+    <div class="topbar">
+      <div>
+        <div class="page-title">ประวัติรายการ <span>ทั้งหมด</span></div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px">กดยกเลิกเพื่อย้อนกลับรายการนั้นได้ทุกเมื่อ</div>
+      </div>
+      <button class="btn btn-red btn-sm" onclick="clearTxLog()" id="clearTxBtn" style="display:none">🗑️ ล้างประวัติทั้งหมด</button>
+    </div>
+    <div id="txlogContent"><div style="text-align:center;color:var(--text-muted);padding:60px">📒 ยังไม่มีประวัติรายการ</div></div>
+  </div>
+
+  <!-- Report -->
+  <div class="page" id="page-report">
+    <div class="topbar">
+      <div class="page-title">รายงาน <span>ภาพรวมธุรกิจ</span></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select id="rpt_month" onchange="renderReport()" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:Sarabun,sans-serif;font-size:13px">
+          <option value="all">ทุกเดือน</option>
+        </select>
+        <select id="rpt_year" onchange="renderReport()" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:Sarabun,sans-serif;font-size:13px">
+          <option value="all">ทุกปี</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- stats row 1 -->
+    <div class="stats" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+      <div class="stat-card sg"><div class="stat-label">เงินจำนำค้างอยู่</div><div class="stat-value" id="rpt_active_money" style="color:var(--gold);font-size:20px">0</div><div class="stat-sub">บาท</div><div class="stat-icon">💰</div></div>
+      <div class="stat-card sv"><div class="stat-label">ดอกเบี้ยที่รับแล้ว</div><div class="stat-value" id="rpt_interest_earned" style="color:var(--green);font-size:20px">0</div><div class="stat-sub">บาท</div><div class="stat-icon">📈</div></div>
+      <div class="stat-card sb"><div class="stat-label">รายการจำนำใหม่</div><div class="stat-value" id="rpt_new_count" style="color:var(--blue)">0</div><div class="stat-sub">รายการ</div><div class="stat-icon">📋</div></div>
+      <div class="stat-card sr"><div class="stat-label">ไถ่ถอนแล้ว</div><div class="stat-value" id="rpt_redeemed" style="color:var(--red)">0</div><div class="stat-sub">รายการ</div><div class="stat-icon">✅</div></div>
+    </div>
+
+    <!-- สรุปรายเดือน -->
+    <div class="table-card" style="margin-bottom:20px">
+      <div class="table-header"><h3>📅 สรุปรายเดือน</h3></div>
+      <table>
+        <thead><tr><th>เดือน</th><th>จำนำใหม่</th><th>เงินจำนำรวม</th><th>ดอกเบี้ยรับ</th><th>ไถ่ถอน</th></tr></thead>
+        <tbody id="rpt_monthly_table"><tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:24px">ยังไม่มีข้อมูล</td></tr></tbody>
+      </table>
+    </div>
+
+    <!-- สรุปตามประเภท -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="table-card">
+        <div class="table-header"><h3>🏷️ ตามประเภทสินค้า</h3></div>
+        <table>
+          <thead><tr><th>ประเภท</th><th>จำนวน</th><th>เงินรวม</th></tr></thead>
+          <tbody id="rpt_type_table"><tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:24px">ยังไม่มีข้อมูล</td></tr></tbody>
+        </table>
+      </div>
+      <div class="table-card">
+        <div class="table-header"><h3>💎 ตามน้ำหนักทอง</h3></div>
+        <table>
+          <thead><tr><th>น้ำหนัก</th><th>จำนวน</th><th>เงินรวม</th></tr></thead>
+          <tbody id="rpt_weight_table"><tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:24px">ยังไม่มีข้อมูล</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings -->
+  <div class="page" id="page-settings">
+    <div class="topbar">
+      <div class="page-title">ตั้งค่า <span>ระบบ</span></div>
+    </div>
+
+    <!-- ข้อมูลร้าน -->
+    <div class="settings-section">
+      <h3>🏪 ข้อมูลร้าน</h3>
+      <div class="settings-row">
+        <div><div class="settings-row-label">ชื่อร้าน</div><div class="settings-row-sub">แสดงบนใบเสร็จ</div></div>
+        <input type="text" id="cfg_shop_name" style="width:220px" placeholder="ห้างทองสุดใจ" oninput="saveSettings()">
+      </div>
+      <div class="settings-row">
+        <div><div class="settings-row-label">เบอร์โทรร้าน</div><div class="settings-row-sub">แสดงบนใบเสร็จ</div></div>
+        <input type="text" id="cfg_shop_phone" style="width:220px" placeholder="0xx-xxx-xxxx" oninput="saveSettings()">
+      </div>
+      <div class="settings-row">
+        <div><div class="settings-row-label">ที่อยู่ร้าน</div><div class="settings-row-sub">แสดงบนใบเสร็จ</div></div>
+        <input type="text" id="cfg_shop_addr" style="width:220px" placeholder="ที่อยู่..." oninput="saveSettings()">
+      </div>
+    </div>
+
+    <!-- ราคาทอง -->
+    <div class="settings-section">
+      <h3>💰 ราคาทองวันนี้</h3>
+      <div class="settings-row">
+        <div><div class="settings-row-label">ราคาทอง 96.5%</div><div class="settings-row-sub">แสดงในแถบด้านซ้าย</div></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="number" id="cfg_gold_price" style="width:130px" placeholder="44250" oninput="saveSettings();updateGoldPrice()">
+          <span style="color:var(--text-muted);font-size:13px">บาท/บาท</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- เปลี่ยนรหัสผ่าน -->
+    <div class="settings-section">
+      <h3>🔐 ความปลอดภัย</h3>
+      <div class="settings-row">
+        <div><div class="settings-row-label">ชื่อผู้ใช้</div></div>
+        <input type="text" id="cfg_username" style="width:220px" placeholder="admin">
+      </div>
+      <div class="settings-row">
+        <div><div class="settings-row-label">รหัสผ่านใหม่</div></div>
+        <input type="password" id="cfg_new_pass" style="width:220px" placeholder="รหัสผ่านใหม่">
+      </div>
+      <div class="settings-row">
+        <div><div class="settings-row-label">ยืนยันรหัสผ่าน</div></div>
+        <input type="password" id="cfg_confirm_pass" style="width:220px" placeholder="ยืนยันรหัสผ่านใหม่">
+      </div>
+      <div style="margin-top:14px">
+        <button class="btn btn-gold" onclick="changePassword()">🔑 บันทึกรหัสผ่านใหม่</button>
+      </div>
+    </div>
+
+    <!-- Backup -->
+    <div class="settings-section">
+      <h3>💾 สำรองและกู้คืนข้อมูล</h3>
+      <div class="settings-row">
+        <div><div class="settings-row-label">สำรองข้อมูล</div><div class="settings-row-sub">ดาวน์โหลดไฟล์ .json</div></div>
+        <button class="btn btn-gold" onclick="backupData()">💾 สำรองข้อมูล</button>
+      </div>
+      <div class="settings-row">
+        <div><div class="settings-row-label">นำเข้าข้อมูล</div><div class="settings-row-sub">โหลดจากไฟล์ backup</div></div>
+        <button class="btn btn-outline" onclick="document.getElementById('restoreInput').click()">📂 นำเข้าข้อมูล</button>
+      </div>
+      <div class="settings-row">
+        <div><div class="settings-row-label" style="color:var(--red)">ล้างข้อมูลทั้งหมด</div><div class="settings-row-sub">⚠️ ไม่สามารถกู้คืนได้</div></div>
+        <button class="btn btn-red" onclick="clearAllData()">🗑️ ล้างทั้งหมด</button>
+      </div>
+    </div>
+
+  </div>
+
+</main>
+</div>
+
+<!-- Modal ตัดดอก -->
+<div class="modal-overlay" id="cutOverlay">
+<div class="modal" style="width:480px">
+  <div class="modal-head">
+    <h2>✂️ ตัดดอกเบี้ย</h2>
+    <button class="close-btn" onclick="closeCut()">✕</button>
+  </div>
+  <div class="modal-body">
+    <div id="cutInfo" style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;font-size:13px;line-height:2"></div>
+    <!-- วันที่ + วันนับ -->
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <div style="background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.3);border-radius:8px;padding:10px 14px;font-size:13px;flex:1">
+        📅 จำนำ: <strong id="cut_pawn_date">-</strong>
+      </div>
+      <div style="background:rgba(91,143,170,0.12);border:1px solid rgba(91,143,170,0.3);border-radius:8px;padding:10px 14px;font-size:13px;flex:1;text-align:center">
+        🕐 <strong id="cut_days_since" style="color:var(--blue);font-size:17px">0</strong> วัน
+        <span style="color:var(--text-muted);font-size:11px" id="cut_months_label"></span>
+      </div>
+    </div>
+    <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:12px">
+      <div>
+        <label>วันที่ตัดดอก</label>
+        <input type="date" id="cut_date" onchange="calcCut()">
+      </div>
+      <div style="display:flex;flex-direction:column;justify-content:flex-end">
+        <label>ดอกเบี้ย</label>
+        <div class="chips" id="cutModeChips">
+          <button class="chip sel" onclick="setCutMode(this,'auto')">⚡ อัตโนมัติ</button>
+          <button class="chip" onclick="setCutMode(this,'manual')">✏️ กำหนดเอง</button>
+        </div>
+      </div>
+      <!-- วิธีคำนวณ -->
+      <div class="span2" id="cut_calc_method_box">
+        <label>วิธีคำนวณ</label>
+        <div class="chips" id="cutCalcChips" style="margin-top:6px">
+          <button class="chip" onclick="setCutCalc(this,'days')">📅 นับวันจริง</button>
+          <button class="chip sel" onclick="setCutCalc(this,'cycle')">🔄 นับรอบเดือน</button>
+        </div>
+      </div>
+      <!-- ต่ออายุ -->
+      <div class="span2">
+        <label>ต่ออายุสัญญา</label>
+        <div class="chips" id="cutRenewChips" style="margin-top:6px">
+          <button class="chip" onclick="pickCutRenew(this,1)">1 เดือน</button>
+          <button class="chip" onclick="pickCutRenew(this,2)">2 เดือน</button>
+          <button class="chip sel" onclick="pickCutRenew(this,3)">3 เดือน</button>
+        </div>
+      </div>
+      <div id="cut_cycle_info" style="display:block;margin-top:-4px;background:rgba(91,143,170,0.1);border:1px solid rgba(91,143,170,0.25);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--text-muted);line-height:1.9" class="span2"></div>
+      <!-- auto breakdown -->
+      <div class="span2" id="cut_auto_box">
+        <div class="calc-box">
+          <div id="cut_breakdown" style="font-size:12px;color:var(--text-muted);margin-bottom:8px;line-height:1.9"></div>
+          <div class="crow"><span class="clbl">ดอกเบี้ยรวม</span><span id="cut_amount" style="color:var(--gold)">0</span></div>
+          <div class="crow"><span class="clbl" id="cut_newexpiry_lbl">ต่ออายุจนถึง</span><span id="cut_new_expiry" style="color:var(--green)">-</span></div>
+          <div class="crow"><span class="clbl">เงินต้นคงเหลือ</span><span id="cut_remain">0</span></div>
+        </div>
+      </div>
+      <!-- manual input -->
+      <div class="span2" id="cut_manual_box" style="display:none">
+        <label>กำหนดดอกเบี้ยเอง (บาท)</label>
+        <input type="number" id="cut_manual_amount" placeholder="0" oninput="calcCut()">
+        <div style="margin-top:8px" class="calc-box">
+          <div class="crow"><span class="clbl">ดอกเบี้ยที่กำหนด</span><span id="cut_manual_display">0</span></div>
+          <div class="crow"><span class="clbl">เงินต้นคงเหลือ</span><span id="cut_remain2">0</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-foot">
+    <button class="btn btn-outline" onclick="closeCut()">ยกเลิก</button>
+    <button class="btn btn-gold" onclick="confirmCut()">✅ ยืนยันตัดดอก</button>
+  </div>
+</div>
+</div>
+
+<!-- Modal ปรับเงิน -->
+<div class="modal-overlay" id="adjustOverlay">
+<div class="modal" style="width:520px">
+  <div class="modal-head">
+    <h2>💱 ปรับเงิน</h2>
+    <button class="close-btn" onclick="closeAdjust()">✕</button>
+  </div>
+  <div class="modal-body">
+    <div id="adjustInfo" style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;font-size:13px;line-height:2.2"></div>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <div style="background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.3);border-radius:8px;padding:10px 14px;font-size:13px;flex:1">
+        📅 จำนำ: <strong id="adj_pawn_date">-</strong>
+      </div>
+      <div style="background:rgba(91,143,170,0.12);border:1px solid rgba(91,143,170,0.3);border-radius:8px;padding:10px 14px;font-size:13px;flex:1;text-align:center">
+        🕐 <strong id="adj_days_since" style="color:var(--blue);font-size:17px">0</strong> วัน
+        <span style="color:var(--text-muted);font-size:11px" id="adj_months_label"></span>
+      </div>
+    </div>
+
+    <!-- ประเภทการปรับ -->
+    <div style="margin-bottom:14px">
+      <label>ประเภทการปรับ</label>
+      <div class="chips" id="adjustTypeChips" style="margin-top:6px">
+        <button class="chip sel" onclick="pickAdjustType(this,'add')">➕ เพิ่มเงินจำนำ</button>
+        <button class="chip" onclick="pickAdjustType(this,'reduce')">➖ ลดเงินต้น / ไถ่บางส่วน</button>
+      </div>
+    </div>
+
+    <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:12px">
+
+      <!-- วันที่ปรับ -->
+      <div>
+        <label>วันที่ปรับ</label>
+        <input type="date" id="adj_date" onchange="calcAdjust()">
+      </div>
+      <!-- ครบกำหนดใหม่ -->
+      <div>
+        <label>ครบกำหนดใหม่</label>
+        <select id="adj_months" onchange="calcAdjust()">
+          <option value="1">1 เดือน</option>
+          <option value="2">2 เดือน</option>
+          <option value="3" selected>3 เดือน</option>
+        </select>
+      </div>
+
+      <!-- คงวันจำนำเดิม (เฉพาะ add) -->
+      <div class="span2" id="adj_keepdate_box">
+        <label>วันเริ่มต้นสัญญาใหม่</label>
+        <div class="chips" id="adjKeepDateChips" style="margin-top:6px">
+          <button class="chip" onclick="pickKeepDate(this,'new')">📅 เริ่มต้นใหม่</button>
+          <button class="chip sel" onclick="pickKeepDate(this,'keep')">🔒 คงวันจำนำเดิม (ไม่เปลี่ยนวัน)</button>
+        </div>
+        <div id="adj_keepdate_note" style="margin-top:8px;font-size:12px;color:var(--text-muted)">
+          ▶ ดอกเบี้ยยังคิดจากวันจำนำเดิม ไม่ต้องตัดดอกก่อน
+        </div>
+      </div>
+
+      <!-- จำนวนเงิน -->
+      <div>
+        <label id="adjAmountLabel">จำนวนที่เพิ่ม (บาท)</label>
+        <input type="number" id="adj_amount" placeholder="0" oninput="calcAdjust()">
+      </div>
+
+      <!-- ดอกเบี้ยก่อนปรับ -->
+      <div id="adj_interest_mode_box">
+        <label>ดอกเบี้ย</label>
+        <div class="chips" id="adjInterestModeChips" style="margin-top:4px">
+          <button class="chip sel" onclick="setAdjInterestMode(this,'auto')">⚡ อัตโนมัติ</button>
+          <button class="chip" onclick="setAdjInterestMode(this,'manual')">✏️ กำหนดเอง</button>
+          <button class="chip" onclick="setAdjInterestMode(this,'none')">ไม่ตัดดอก</button>
+        </div>
+      </div>
+      <div class="span2" id="adj_manual_interest_box" style="display:none">
+        <label>ดอกเบี้ยที่กำหนดเอง (บาท)</label>
+        <input type="number" id="adj_manual_interest" placeholder="0" oninput="calcAdjust()">
+      </div>
+
+      <!-- แก้ไขรายการสินค้า (เฉพาะ reduce) -->
+      <div class="span2" id="adj_item_box" style="display:none">
+        <label>🔖 รายการสินค้าที่ไถ่ออกบางส่วน</label>
+        <div id="adj_item_list" style="margin-top:8px"></div>
+        <div style="margin-top:10px">
+          <label style="color:var(--text)">สินค้าที่เหลืออยู่ (หลังไถ่บางส่วน)</label>
+          <input type="text" id="adj_new_item" placeholder="เช่น แหวน 1 สลึง 1 วง" style="margin-top:6px">
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px">ระบุสินค้าที่เหลืออยู่หลังจากไถ่บางส่วนออกแล้ว</div>
+        </div>
+      </div>
+
+      <!-- สรุปยอด -->
+      <div class="span2">
+        <div class="calc-box">
+          <div id="adj_breakdown" style="font-size:12px;color:var(--text-muted);margin-bottom:8px;line-height:1.9;border-bottom:1px solid rgba(201,168,76,0.15);padding-bottom:8px"></div>
+          <div class="crow"><span class="clbl">เงินต้นเดิม</span><span id="adj_old">0</span></div>
+          <div class="crow" id="adj_interest_row"><span class="clbl">ดอกเบี้ยที่ตัดก่อน</span><span id="adj_interest" style="color:var(--red)">0</span></div>
+          <div class="crow"><span class="clbl" id="adj_change_lbl">+ เพิ่มเงินจำนำ</span><span id="adj_change" style="color:var(--green)">0</span></div>
+          <div style="border-top:1px solid rgba(201,168,76,0.2);margin:6px 0"></div>
+          <div class="crow"><span class="clbl" style="font-weight:600;color:var(--text)">เงินต้นใหม่</span><span id="adj_new" style="color:var(--gold);font-weight:700;font-size:15px">0</span></div>
+          <div class="crow"><span class="clbl">ต่ออายุจนถึง</span><span id="adj_new_expiry" style="color:var(--green);font-weight:600">-</span></div>
+          <div style="border-top:1px solid rgba(201,168,76,0.2);margin:6px 0"></div>
+          <div class="crow" id="adj_summary_row">
+            <span class="clbl" id="adj_summary_lbl">ร้านจ่ายให้ลูกค้า</span>
+            <span id="adj_summary_amt" style="font-weight:700;font-size:14px">0</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <div class="modal-foot">
+    <button class="btn btn-outline" onclick="closeAdjust()">ยกเลิก</button>
+    <button class="btn btn-gold" onclick="confirmAdjust()">✅ ยืนยันปรับเงิน</button>
+  </div>
+</div>
+</div>
+
+<!-- Modal แก้ไข -->
+<div class="modal-overlay" id="editOverlay">
+<div class="modal">
+  <div class="modal-head">
+    <h2>✏️ แก้ไขรายการ</h2>
+    <button class="close-btn" onclick="closeEdit()">✕</button>
+  </div>
+  <div class="modal-body">
+    <div class="form-grid">
+      <div><label>ชื่อ-นามสกุลลูกค้า</label><input type="text" id="e_name"></div>
+      <div><label>เบอร์โทรศัพท์</label><input type="text" id="e_phone"></div>
+      <div><label>เลขที่ใบ (ตั๋ว)</label><input type="text" id="e_ticket"></div>
+      <div><label>วันที่จำนำ</label><input type="date" id="e_date"></div>
+      <div><label>รายการทอง</label><input type="text" id="e_type"></div>
+      <div><label>น้ำหนัก (label)</label><input type="text" id="e_wlabel" placeholder="เช่น 1 บาท"></div>
+      <div><label>เงินจำนำ (บาท)</label><input type="number" id="e_amount"></div>
+      <div>
+        <label>ครบกำหนด (เดือน)</label>
+        <select id="e_months">
+          <option value="1">1 เดือน</option>
+          <option value="2">2 เดือน</option>
+          <option value="3">3 เดือน</option>
+        </select>
+      </div>
+      <div class="span2"><label>หมายเหตุ</label><textarea id="e_note"></textarea></div>
+    </div>
+  </div>
+  <div class="modal-foot">
+    <button class="btn btn-outline" onclick="closeEdit()">ยกเลิก</button>
+    <button class="btn btn-gold" onclick="saveEdit()">💾 บันทึกการแก้ไข</button>
+  </div>
+</div>
+</div>
+
+<!-- Modal รับจำนำ -->
+<div class="modal-overlay" id="modalOverlay">
+<div class="modal">
+  <div class="modal-head">
+    <h2>📥 รับจำนำใหม่ — ห้างทองสุดใจ</h2>
+    <button class="close-btn" onclick="closeModal()">✕</button>
+  </div>
+  <div class="modal-body">
+    <div class="form-grid">
+
+      <div>
+        <label>ชื่อ-นามสกุลลูกค้า *</label>
+        <div class="ac-wrap">
+          <input type="text" id="f_name" placeholder="กรอกชื่อลูกค้า" autocomplete="off"
+            oninput="onNameInput(this.value)" onkeydown="onNameKeyDown(event)" onfocus="onNameInput(this.value)" onblur="setTimeout(()=>closeAcDropdown(),180)">
+          <div class="ac-dropdown" id="acDropdown"></div>
+        </div>
+      </div>
+      <div><label>เบอร์โทรศัพท์</label><input type="text" id="f_phone" placeholder="088-382-3875" maxlength="12" oninput="autoFormatPhone(this)"></div>
+
+      <div><label>เลขที่ใบ (ตั๋ว)</label><input type="text" id="f_ticket" placeholder="อัตโนมัติ"></div>
+      <div><label>วันที่จำนำ *</label><input type="date" id="f_date" onchange="document.getElementById('f_ticket').placeholder='อัตโนมัติ: '+genTicket(this.value)"></div>
+
+      <!-- รายการทอง -->
+      <div class="span2">
+        <label>รายการทอง *</label>
+        <div class="chips" id="typeChips">
+          <button class="chip" onclick="pickType(this,'สร้อยคอ')">สร้อยคอ</button>
+          <button class="chip" onclick="pickType(this,'แหวน')">แหวน</button>
+          <button class="chip" onclick="pickType(this,'สร้อยข้อมือ')">สร้อยข้อมือ</button>
+          <button class="chip" onclick="toggleTypeMore(this)">เพิ่มเติม ▾</button>
+        </div>
+        <div id="typeMoreChips" style="display:none;margin-top:6px" class="chips">
+          <button class="chip" onclick="pickType(this,'ทองแท่ง')">ทองแท่ง</button>
+          <button class="chip" onclick="pickType(this,'กำไล')">กำไล</button>
+          <button class="chip" onclick="pickType(this,'ต่างหู')">ต่างหู</button>
+          <button class="chip" onclick="pickType(this,'จี้')">จี้</button>
+          <button class="chip" onclick="pickType(this,'__other__')">อื่นๆ ระบุเอง →</button>
+        </div>
+        <div class="extra-input" id="typeExtra">
+          <input type="text" id="f_type_other" placeholder="ระบุประเภทสินค้า...">
+        </div>
+        <!-- ทองมีตำหนิ -->
+        <div style="margin-top:8px">
+          <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text-muted);font-weight:400">
+            <input type="checkbox" id="f_defect" style="width:15px;height:15px;accent-color:var(--red);cursor:pointer">
+            <span>⚠️ ทองมีตำหนิหรือชำรุด</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- น้ำหนัก -->
+      <div class="span2">
+        <label>น้ำหนักทอง *</label>
+        <div class="chips" id="weightChips">
+          <button class="chip" onclick="pickWeight(this,'ครึ่งสลึง',1.9)">ครึ่งสลึง</button>
+          <button class="chip" onclick="pickWeight(this,'1 สลึง',3.8)">1 สลึง</button>
+          <button class="chip" onclick="pickWeight(this,'2 สลึง',7.6)">2 สลึง</button>
+          <button class="chip" onclick="pickWeight(this,'1 บาท',15.2)">1 บาท</button>
+          <button class="chip" onclick="toggleWeightMore(this)">เพิ่มเติม ▾</button>
+        </div>
+        <div id="weightMoreChips" style="display:none;margin-top:6px" class="chips">
+          <button class="chip" onclick="pickWeight(this,'3 สลึง',11.4)">3 สลึง</button>
+          <button class="chip" onclick="pickWeight(this,'2 บาท',30.4)">2 บาท</button>
+          <button class="chip" onclick="pickWeight(this,'3 บาท',45.6)">3 บาท</button>
+          <button class="chip" onclick="pickWeight(this,'4 บาท',60.8)">4 บาท</button>
+          <button class="chip" onclick="pickWeight(this,'5 บาท',76.0)">5 บาท</button>
+          <button class="chip" onclick="pickWeight(this,'__other__',0)">ระบุน้ำหนักเอง →</button>
+        </div>
+        <div class="extra-input" id="weightExtra">
+          <input type="number" id="f_weight_other" placeholder="น้ำหนัก (กรัม) เช่น 5.5" step="0.1" oninput="calcInterest()">
+        </div>
+      </div>
+
+      <!-- toggle multi-item -->
+      <div class="span2" style="margin-top:-4px">
+        <button type="button" class="btn btn-outline btn-sm" onclick="toggleMultiItem()" id="multiItemToggle" style="font-size:12px">➕ จำนำหลายชิ้นพร้อมกัน</button>
+      </div>
+
+      <!-- รายการหลายชิ้น -->
+      <div class="span2" id="multiItemSection" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <label style="margin:0">รายการสินค้า (หลายชิ้น)</label>
+          <button class="btn btn-outline btn-sm" onclick="addPawnItem()" style="color:var(--gold);border-color:var(--gold)">➕ เพิ่มชิ้น</button>
+        </div>
+        <div id="pawnItemList"></div>
+        <!-- น้ำหนักรวม: แก้ไขได้ -->
+        <div style="display:flex;align-items:center;gap:10px;margin-top:8px;background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.2);border-radius:8px;padding:8px 12px">
+          <span style="font-size:12px;color:var(--gold)">น้ำหนักรวม:</span>
+          <input type="number" id="f_total_weight" placeholder="กรัม" step="0.01" style="width:90px;font-size:13px;padding:4px 8px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text)" oninput="onTotalWeightInput()">
+          <span style="font-size:12px;color:var(--text-muted)">กรัม</span>
+          <span id="f_total_weight_auto" style="font-size:12px;color:var(--text-muted)"></span>
+        </div>
+      </div>
+
+      <!-- เงินจำนำ -->
+      <div><label>เงินจำนำ (บาท) *</label><input type="number" id="f_amount" placeholder="0" oninput="calcInterest()"></div>
+
+      <!-- ครบกำหนด -->
+      <div>
+        <label>ครบกำหนด *</label>
+        <div class="chips" id="monthChips" style="margin-top:4px">
+          <button class="chip" onclick="pickMonths(this,'1')">1 เดือน</button>
+          <button class="chip" onclick="pickMonths(this,'2')">2 เดือน</button>
+          <button class="chip sel" onclick="pickMonths(this,'3')">3 เดือน</button>
+        </div>
+      </div>
+
+      <!-- หักดอกล่วงหน้า (ซ่อน เปิดได้) -->
+      <div class="span2">
+        <button type="button" onclick="togglePrepay()" id="prepayToggleBtn" class="btn btn-outline btn-sm" style="font-size:12px;color:var(--text-muted)">💡 หักดอกล่วงหน้า</button>
+        <div id="prepaySection" style="display:none;margin-top:10px">
+          <label>หักดอกล่วงหน้า — ลูกค้าจ่ายดอกล่วงหน้าตอนรับจำนำ</label>
+          <div class="chips" id="prepayChips" style="margin-top:6px">
+            <button class="chip sel" onclick="pickPrepay(this,0)">ไม่หัก</button>
+            <button class="chip" onclick="pickPrepay(this,1)">1 เดือน</button>
+            <button class="chip" onclick="pickPrepay(this,2)">2 เดือน</button>
+            <button class="chip" onclick="pickPrepay(this,3)">3 เดือน</button>
+          </div>
+          <div id="c_prepay_detail" style="display:none;margin-top:8px" class="calc-box">
+            <div class="crow"><span class="clbl">เงินจำนำ</span><span id="c_principal2">0</span></div>
+            <div class="crow"><span class="clbl" style="color:#e8a030">หักดอกล่วงหน้า (<span id="c_prepay_months">0</span> เดือน × 2%)</span><span id="c_prepay_amt" style="color:#e8a030">0</span></div>
+            <div class="crow"><span class="clbl">ลูกค้าได้รับเงินจริง</span><span id="c_net_amt" style="color:var(--green);font-weight:700">0</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- คำนวณ -->
+      <div class="span2">
+        <div class="calc-box">
+          <div class="crow"><span class="clbl">เงินจำนำ</span><span id="c_principal">0</span></div>
+
+        </div>
+      </div>
+
+      <!-- หมายเหตุ -->
+      <div class="span2">
+        <label>หมายเหตุ / รายละเอียดเพิ่มเติม</label>
+        <textarea id="f_note" placeholder="เช่น ลักษณะสินค้า, สภาพ, รายละเอียดพิเศษ..."></textarea>
+      </div>
+
+    </div>
+  </div>
+  <div class="modal-foot">
+    <button class="btn btn-outline" onclick="closeModal()">ยกเลิก</button>
+    <button class="btn btn-gold" onclick="savePawn()">💾 บันทึกและออกใบ</button>
+  </div>
+</div>
+</div>
+
+<!-- Modal ใบรับจำนำ -->
+<div class="modal-overlay" id="receiptOverlay">
+<div class="modal" style="width:480px">
+  <div class="modal-head">
+    <h2>🧾 ใบรับจำนำ</h2>
+    <button class="close-btn" onclick="closeReceipt()">✕</button>
+  </div>
+  <div class="modal-body" style="padding:16px">
+    <div id="printArea"><div class="receipt" id="receiptContent"></div></div>
+  </div>
+  <div class="modal-foot">
+    <button class="btn btn-outline" onclick="closeReceipt()">ปิด</button>
+    <button class="btn btn-gold" onclick="window.print()">🖨️ พิมพ์ใบรับจำนำ</button>
+  </div>
+</div>
+</div>
+
+<script>
+// ========== Firebase Init ==========
+let db, auth;
+try {
+  if (typeof firebase !== 'undefined' && window._fbConfig) {
+    if (!firebase.apps.length) firebase.initializeApp(window._fbConfig);
+    db = firebase.firestore();
+    auth = firebase.auth();
+  }
+} catch(e) { console.warn('Firebase init failed:', e); }
+
+// ========== Firebase Sync ==========
+let pawns = JSON.parse(localStorage.getItem('sudjai_pawns')||'[]');
+let trash = JSON.parse(localStorage.getItem('sudjai_trash')||'[]');
+let _fbReady = false;
+
+function setSyncStatus(state, text){
+  const dot=document.getElementById('syncDot');
+  const txt=document.getElementById('syncText');
+  const wrap=document.getElementById('syncStatus');
+  if(!dot||!txt||!wrap) return;
+  const styles={
+    ok:  { bg:'rgba(91,170,114,0.1)',  border:'rgba(91,170,114,0.25)',  dot:'var(--green)', color:'var(--green)' },
+    sync:{ bg:'rgba(201,168,76,0.1)',  border:'rgba(201,168,76,0.25)',  dot:'#e8a030',      color:'#e8a030' },
+    err: { bg:'rgba(224,85,85,0.1)',   border:'rgba(224,85,85,0.25)',   dot:'var(--red)',    color:'var(--red)' }
+  };
+  const s=styles[state]||styles.ok;
+  wrap.style.background=s.bg; wrap.style.borderColor=s.border; wrap.style.color=s.color;
+  dot.style.background=s.dot; txt.textContent=text;
+}
+
+// Real-time listeners
+function startFirebaseListeners(){
+  if(!db){ setSyncStatus('err','ไม่พบ Firebase SDK'); _fbReady=true; return; }
+  setSyncStatus('sync','กำลังเชื่อมต่อ...');
+  db.collection('sjgold').doc('pawns').onSnapshot(snap=>{
+    if(snap.exists){
+      const data=snap.data();
+      pawns = data.pawns||[];
+      trash = data.trash||[];
+      localStorage.setItem('sudjai_pawns',JSON.stringify(pawns));
+      localStorage.setItem('sudjai_trash',JSON.stringify(trash));
+      if(_fbReady) renderAll();
+      setSyncStatus('ok','ซิงค์แล้ว · '+new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'}));
+    }
+    _fbReady=true;
+  }, err=>{ setSyncStatus('err','ออฟไลน์ — ใช้ข้อมูลท้องถิ่น'); _fbReady=true; renderAll(); });
+
+  db.collection('sjgold').doc('txlog').onSnapshot(snap=>{
+    if(snap.exists){ txLog=snap.data().txLog||[]; updateTxBadge(); }
+  });
+}
+
+function save(){
+  localStorage.setItem('sudjai_pawns',JSON.stringify(pawns));
+  localStorage.setItem('sudjai_trash',JSON.stringify(trash));
+  if(!db) return;
+  setSyncStatus('sync','กำลังบันทึก...');
+  db.collection('sjgold').doc('pawns').set({ pawns, trash })
+    .then(()=>setSyncStatus('ok','บันทึกแล้ว · '+new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})))
+    .catch(()=>setSyncStatus('err','บันทึกล้มเหลว'));
+}
+
+// ========== Customer Database ==========
+function getCustomers(){
+  // รวบรวมลูกค้าจาก pawns ทั้งหมด (unique by name+phone)
+  const map={};
+  [...pawns,...trash].forEach(p=>{
+    if(!p.name) return;
+    const key=p.name.trim().toLowerCase();
+    if(!map[key]){ map[key]={ name:p.name.trim(), phone:p.phone||'', count:0 }; }
+    map[key].count++;
+    if(p.phone && !map[key].phone) map[key].phone=p.phone;
+  });
+  return Object.values(map).sort((a,b)=>b.count-a.count);
+}
+
+let acIndex=-1;
+function onNameInput(val){
+  const q=(val||'').trim().toLowerCase();
+  const drop=document.getElementById('acDropdown'); if(!drop) return;
+  if(!q){ drop.innerHTML=''; drop.classList.remove('open'); acIndex=-1; return; }
+  const customers=getCustomers();
+  const matches=customers.filter(c=>c.name.toLowerCase().includes(q)).slice(0,8);
+  if(!matches.length){ drop.innerHTML=''; drop.classList.remove('open'); acIndex=-1; return; }
+  drop.innerHTML=matches.map((c,i)=>`
+    <div class="ac-item" data-name="${c.name}" data-phone="${c.phone}" onmousedown="pickCustomer('${c.name.replace(/'/g,"\\'")}','${c.phone.replace(/'/g,"\\'")}')">
+      <div><span class="ac-name">${c.name}</span></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        ${c.phone?`<span class="ac-phone">${c.phone}</span>`:''}
+        <span class="ac-count">${c.count} ครั้ง</span>
+      </div>
+    </div>`).join('');
+  drop.classList.add('open');
+  acIndex=-1;
+}
+function onNameKeyDown(e){
+  const drop=document.getElementById('acDropdown');
+  const items=drop?drop.querySelectorAll('.ac-item'):[];
+  if(!items.length) return;
+  if(e.key==='ArrowDown'){ e.preventDefault(); acIndex=Math.min(acIndex+1,items.length-1); items.forEach((x,i)=>x.classList.toggle('active',i===acIndex)); }
+  else if(e.key==='ArrowUp'){ e.preventDefault(); acIndex=Math.max(acIndex-1,0); items.forEach((x,i)=>x.classList.toggle('active',i===acIndex)); }
+  else if(e.key==='Enter'&&acIndex>=0){ e.preventDefault(); items[acIndex].dispatchEvent(new MouseEvent('mousedown')); }
+  else if(e.key==='Escape'){ closeAcDropdown(); }
+}
+function pickCustomer(name,phone){
+  const nEl=document.getElementById('f_name'); if(nEl) nEl.value=name;
+  const pEl=document.getElementById('f_phone');
+  if(pEl && phone){ pEl.value=phone; }
+  closeAcDropdown();
+}
+function closeAcDropdown(){
+  const drop=document.getElementById('acDropdown'); if(drop){ drop.classList.remove('open'); }
+  acIndex=-1;
+}
+
+// ========== Phone auto-format ==========
+function autoFormatPhone(input){
+  let v=input.value.replace(/\D/g,'');
+  if(v.length<=3) input.value=v;
+  else if(v.length<=6) input.value=v.slice(0,3)+'-'+v.slice(3);
+  else input.value=v.slice(0,3)+'-'+v.slice(3,6)+'-'+v.slice(6,10);
+}
+let selType='', selWeightLabel='', selWeightGram=0, selMonths='3';
+let pawnItems=[]; // multi-item list
+
+// สร้างเลขตั๋วอัตโนมัติ รูปแบบ 904001
+// ปีท้าย 1 หลัก + เดือน 2 หลัก + ลำดับ 3 หลัก
+function genTicket(dateStr){
+  const d = dateStr ? new Date(dateStr) : new Date();
+  const yr = String(d.getFullYear()).slice(-1);         // เลขท้ายปี พ.ศ.
+  const bYear = d.getFullYear() + 543;
+  const yrB = String(bYear).slice(-1);                  // เลขท้ายปี พ.ศ.
+  const mm = String(d.getMonth()+1).padStart(2,'0');    // เดือน 2 หลัก
+  const prefix = yrB + mm;                              // เช่น 904
+  // หาเลขลำดับสูงสุดของเดือนนี้
+  const same = pawns.filter(p => p.ticket && p.ticket.startsWith(prefix));
+  let maxSeq = 0;
+  same.forEach(p => {
+    const seq = parseInt(p.ticket.slice(prefix.length)) || 0;
+    if(seq > maxSeq) maxSeq = seq;
+  });
+  const nextSeq = String(maxSeq + 1).padStart(3,'0');
+  return prefix + nextSeq;
+}
+
+function fm(n){ return Number(n).toLocaleString('th-TH',{minimumFractionDigits:0,maximumFractionDigits:0}); }
+function fd(d){ return new Date(d).toLocaleDateString('th-TH',{year:'numeric',month:'short',day:'numeric'}); }
+function dl(d){ return Math.ceil((new Date(d)-new Date())/86400000); }
+
+function getStatus(p){
+  if(p.status==='redeemed') return 'r';
+  const d=dl(p.expiry);
+  if(d<0) return 'e';
+  if(d<=7) return 'w';
+  return 'a';
+}
+function sbadge(p){
+  const s=getStatus(p);
+  const l={a:'🟢 ปกติ',w:'🔴 ใกล้หมด',e:'⚫ หมดอายุ',r:'🔵 ไถ่แล้ว'};
+  const c={a:'b-a',w:'b-w',e:'b-e',r:'b-r'};
+  return `<span class="badge ${c[s]}">${l[s]}</span>`;
+}
+
+function showPage(n){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));
+  document.getElementById('page-'+n).classList.add('active');
+  const m={dashboard:0,pawns:1,report:2,txlog:3,trash:4,settings:5};
+  if(m[n]!==undefined) document.querySelectorAll('.nav-item')[m[n]].classList.add('active');
+  if(n==='report') renderReport();
+  if(n==='trash') renderTrash();
+  if(n==='pawns') renderFullTable();
+  if(n==='txlog') renderTxLog();
+  if(n==='settings') renderSettings();
+}
+
+function toggleTypeMore(btn){
+  const el=document.getElementById('typeMoreChips');
+  const open=el.style.display!=='none';
+  el.style.display=open?'none':'flex';
+  btn.textContent=open?'เพิ่มเติม ▾':'ซ่อน ▴';
+}
+function toggleWeightMore(btn){
+  const el=document.getElementById('weightMoreChips');
+  const open=el.style.display!=='none';
+  el.style.display=open?'none':'flex';
+  btn.textContent=open?'เพิ่มเติม ▾':'ซ่อน ▴';
+}
+
+function pickType(el,v){
+  document.querySelectorAll('#typeChips .chip, #typeMoreChips .chip').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+  if(v==='__other__'){ selType=''; document.getElementById('typeExtra').classList.add('show'); }
+  else { selType=v; document.getElementById('typeExtra').classList.remove('show'); document.getElementById('f_type_other').value=''; }
+  // ถ้ามีหลายชิ้นแล้ว อัปเดตชิ้นแรก
+  if(pawnItems.length>0){ pawnItems[0].type=selType; renderPawnItems(); }
+}
+function pickWeight(el,lbl,g){
+  document.querySelectorAll('#weightChips .chip, #weightMoreChips .chip').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+  if(lbl==='__other__'){ selWeightLabel=''; selWeightGram=0; document.getElementById('weightExtra').classList.add('show'); }
+  else { selWeightLabel=lbl; selWeightGram=g; document.getElementById('weightExtra').classList.remove('show'); document.getElementById('f_weight_other').value=''; calcInterest(); }
+  if(pawnItems.length>0){ pawnItems[0].wLabel=selWeightLabel; pawnItems[0].wGram=selWeightGram; renderPawnItems(); }
+}
+function pickMonths(el,v){
+  document.querySelectorAll('#monthChips .chip').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel'); selMonths=v; calcInterest();
+}
+
+// ===== Multi-item system =====
+const WEIGHT_MAP={'ครึ่งสลึง':1.9,'1 สลึง':3.8,'2 สลึง':7.6,'3 สลึง':11.4,'1 บาท':15.2,'2 บาท':30.4,'3 บาท':45.6,'4 บาท':60.8,'5 บาท':76.0};
+const WEIGHT_OPTS=['ครึ่งสลึง','1 สลึง','2 สลึง','3 สลึง','1 บาท','2 บาท','3 บาท','4 บาท','5 บาท'];
+const TYPE_OPTS=['สร้อยคอ','แหวน','สร้อยข้อมือ','ทองแท่ง','กำไล','ต่างหู','จี้'];
+
+function addPawnItem(){
+  pawnItems.push({ type: selType||TYPE_OPTS[0], wLabel:'1 สลึง', wGram:3.8, qty:1 });
+  renderPawnItems();
+  document.getElementById('multiItemSection').style.display='block';
+}
+
+function removePawnItem(i){
+  pawnItems.splice(i,1);
+  if(pawnItems.length===0) document.getElementById('multiItemSection').style.display='none';
+  renderPawnItems();
+  updateMultiItemSummary();
+}
+
+function renderPawnItems(){
+  const el=document.getElementById('pawnItemList'); if(!el) return;
+  if(!pawnItems.length){ el.innerHTML=''; updateMultiItemSummary(); return; }
+  el.innerHTML=pawnItems.map((it,i)=>`
+    <div style="display:flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:6px">
+      <select onchange="pawnItems[${i}].type=this.value;updateMultiItemSummary()" style="flex:1;font-size:13px;padding:5px 8px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text)">
+        ${TYPE_OPTS.map(t=>`<option value="${t}" ${it.type===t?'selected':''}>${t}</option>`).join('')}
+        <option value="__custom__" ${!TYPE_OPTS.includes(it.type)?'selected':''}>อื่นๆ</option>
+      </select>
+      <select onchange="pawnItems[${i}].wLabel=this.value;pawnItems[${i}].wGram=WEIGHT_MAP[this.value]||0;updateMultiItemSummary()" style="width:95px;font-size:13px;padding:5px 8px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text)">
+        ${WEIGHT_OPTS.map(w=>`<option value="${w}" ${it.wLabel===w?'selected':''}>${w}</option>`).join('')}
+      </select>
+      <span style="font-size:12px;color:var(--text-muted)">×</span>
+      <input type="number" value="${it.qty}" min="1" max="20" style="width:48px;text-align:center;font-size:13px;padding:5px 6px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text)" onchange="pawnItems[${i}].qty=parseInt(this.value)||1;updateMultiItemSummary()">
+      <button onclick="removePawnItem(${i})" style="background:rgba(224,85,85,0.12);border:1px solid rgba(224,85,85,0.25);color:var(--red);border-radius:6px;padding:5px 8px;cursor:pointer;font-size:13px">✕</button>
+    </div>
+  `).join('');
+  updateMultiItemSummary();
+}
+
+function updateMultiItemSummary(){
+  if(!pawnItems.length) return;
+  const autoGram=pawnItems.reduce((s,it)=>s+(it.wGram||0)*it.qty,0);
+  // อัปเดต placeholder ของช่องน้ำหนักรวม ถ้ายังไม่ได้ใส่เอง
+  const wInput=document.getElementById('f_total_weight');
+  const autoEl=document.getElementById('f_total_weight_auto');
+  if(wInput && !wInput.value){
+    wInput.placeholder=autoGram.toFixed(2);
+    if(autoEl) autoEl.textContent=`(คำนวณได้ ${autoGram.toFixed(2)} กรัม)`;
+  }
+}
+
+function getMultiItemDisplay(){
+  if(!pawnItems.length) return null;
+  const typeLabel=pawnItems.map(it=>`${it.type}${it.qty>1?' '+it.qty+'ชิ้น':''}`).join(' + ');
+  const wLabel=pawnItems.map(it=>`${it.wLabel}${it.qty>1?' ×'+it.qty:''}`).join(' + ');
+  const autoGram=pawnItems.reduce((s,it)=>s+(it.wGram||0)*it.qty,0);
+  // ใช้ค่าที่ใส่เองถ้ามี
+  const manualW=parseFloat(document.getElementById('f_total_weight')?.value)||0;
+  const wGram=manualW||autoGram;
+  const hasManualWeight=manualW>0;
+  return { typeLabel, wLabel, wGram, hasManualWeight };
+}
+
+function openModal(){
+  const today=new Date().toISOString().split('T')[0];
+  document.getElementById('f_date').value=today;
+  const preview=genTicket(today);
+  document.getElementById('f_ticket').placeholder='อัตโนมัติ: '+preview;
+  document.getElementById('modalOverlay').classList.add('show');
+  calcInterest();
+}
+function closeModal(){
+  document.getElementById('modalOverlay').classList.remove('show');
+  ['f_name','f_phone','f_ticket','f_amount','f_note','f_type_other','f_weight_other'].forEach(id=>document.getElementById(id).value='');
+  const fw=document.getElementById('f_total_weight'); if(fw) fw.value='';
+  const fdef=document.getElementById('f_defect'); if(fdef) fdef.checked=false;
+  closeAcDropdown();
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('sel'));
+  document.querySelectorAll('.extra-input').forEach(c=>c.classList.remove('show'));
+  document.querySelectorAll('#monthChips .chip')[2].classList.add('sel');
+  document.querySelectorAll('#prepayChips .chip')[0].classList.add('sel');
+  selType=''; selWeightLabel=''; selWeightGram=0; selMonths='3'; selPrepayMonths=0;
+  // reset multi-item
+  pawnItems=[];
+  document.getElementById('pawnItemList').innerHTML='';
+  document.getElementById('multiItemSection').style.display='none';
+  const btn=document.getElementById('multiItemToggle');
+  if(btn) btn.textContent='➕ จำนำหลายชิ้นพร้อมกัน';
+  // reset type/weight more panels
+  document.getElementById('typeMoreChips').style.display='none';
+  document.getElementById('weightMoreChips').style.display='none';
+  const tmb=document.querySelector('#typeChips .chip:last-child');
+  const wmb=document.querySelector('#weightChips .chip:last-child');
+  if(tmb) tmb.textContent='เพิ่มเติม ▾';
+  if(wmb) wmb.textContent='เพิ่มเติม ▾';
+  // reset prepay section
+  const ps=document.getElementById('prepaySection'); if(ps) ps.style.display='none';
+  const pb=document.getElementById('prepayToggleBtn');
+  if(pb){ pb.style.color='var(--text-muted)'; pb.style.borderColor='var(--border)'; }
+  calcInterest();
+}
+function closeReceipt(){ document.getElementById('receiptOverlay').classList.remove('show'); }
+
+let selPrepayMonths = 0;
+function pickPrepay(el, m){
+  document.querySelectorAll('#prepayChips .chip').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel'); selPrepayMonths=m; calcInterest();
+}
+
+function togglePrepay(){
+  const sec=document.getElementById('prepaySection');
+  const btn=document.getElementById('prepayToggleBtn');
+  const isOn=sec.style.display!=='none';
+  sec.style.display=isOn?'none':'block';
+  btn.style.color=isOn?'var(--text-muted)':'var(--gold)';
+  btn.style.borderColor=isOn?'var(--border)':'var(--gold)';
+  if(isOn){ selPrepayMonths=0; document.querySelectorAll('#prepayChips .chip')[0].classList.add('sel'); calcInterest(); }
+}
+
+function onTotalWeightInput(){
+  // ถ้าใส่เองให้ mark ว่าใช้ manual weight
+  const val=document.getElementById('f_total_weight').value;
+  const autoEl=document.getElementById('f_total_weight_auto');
+  if(autoEl) autoEl.textContent = val ? '' : '(อัตโนมัติ)';
+}
+
+function calcInterest(){
+  const amt=parseFloat(document.getElementById('f_amount').value)||0;
+  const m=parseInt(selMonths)||3;
+  const monthly=amt*0.02;
+  const prepayAmt=monthly*selPrepayMonths;
+  const netAmt=amt-prepayAmt;
+  const redeem=amt+(monthly*m);
+
+  const pEl=document.getElementById('c_principal');
+  if(pEl) pEl.textContent=fm(amt);
+
+  // prepay detail box
+  const detail=document.getElementById('c_prepay_detail');
+  const p2=document.getElementById('c_principal2');
+  const pmEl=document.getElementById('c_prepay_months');
+  const paEl=document.getElementById('c_prepay_amt');
+  const naEl=document.getElementById('c_net_amt');
+  if(selPrepayMonths>0){
+    if(detail) detail.style.display='block';
+    if(p2) p2.textContent=fm(amt);
+    if(pmEl) pmEl.textContent=selPrepayMonths;
+    if(paEl) paEl.textContent=fm(prepayAmt);
+    if(naEl) naEl.textContent=fm(netAmt);
+  } else {
+    if(detail) detail.style.display='none';
+  }
+}
+
+function toggleMultiItem(){
+  const sec=document.getElementById('multiItemSection');
+  const btn=document.getElementById('multiItemToggle');
+  const isOn=sec.style.display!=='none';
+  if(isOn){
+    // ปิด — ล้างรายการ
+    pawnItems=[];
+    document.getElementById('pawnItemList').innerHTML='';
+    sec.style.display='none';
+    btn.textContent='➕ จำนำหลายชิ้นพร้อมกัน';
+  } else {
+    // เปิด — เพิ่มชิ้นแรกอัตโนมัติจากที่เลือกไว้
+    sec.style.display='block';
+    btn.textContent='✕ ยกเลิกหลายชิ้น';
+    if(pawnItems.length===0){
+      pawnItems.push({ type:selType||'สร้อยคอ', wLabel:selWeightLabel||'1 สลึง', wGram:selWeightGram||3.8, qty:1 });
+    }
+    renderPawnItems();
+  }
+}
+
+function savePawn(){
+  const name=document.getElementById('f_name').value.trim();
+  const amt=parseFloat(document.getElementById('f_amount').value);
+  const dateVal=document.getElementById('f_date').value;
+  const defect=document.getElementById('f_defect')?.checked||false;
+
+  let type, wLabel, wGram, itemsData=null, hasManualWeight=false;
+  const multiOn=document.getElementById('multiItemSection').style.display!=='none' && pawnItems.length>0;
+
+  if(multiOn){
+    const mi=getMultiItemDisplay();
+    type=mi.typeLabel; wLabel=mi.wLabel; wGram=mi.wGram;
+    hasManualWeight=mi.hasManualWeight;
+    itemsData=pawnItems.map(it=>({...it}));
+  } else {
+    const typeOther=document.getElementById('f_type_other').value.trim();
+    type=selType||typeOther;
+    const wOther=parseFloat(document.getElementById('f_weight_other').value)||0;
+    wLabel=selWeightLabel||(wOther?wOther+' กรัม':'');
+    wGram=selWeightGram||wOther;
+    hasManualWeight=!!document.getElementById('f_weight_other').value;
+  }
+
+  if(!name||!type||!wLabel||!amt||!dateVal){
+    alert('กรุณากรอกข้อมูลที่จำเป็น:\n• ชื่อลูกค้า\n• รายการทอง\n• น้ำหนัก\n• เงินจำนำ\n• วันที่จำนำ');
+    return;
+  }
+  const ticketIn=document.getElementById('f_ticket').value.trim();
+  const ticket=ticketIn||genTicket(dateVal);
+  const months=parseInt(selMonths)||3;
+  const exp=new Date(dateVal); exp.setMonth(exp.getMonth()+months);
+  const prepayMonths=selPrepayMonths||0;
+  const prepayAmt=prepayMonths>0 ? amt*0.02*prepayMonths : 0;
+
+  const p={
+    id:Date.now(), ticket, name,
+    phone:document.getElementById('f_phone').value.trim(),
+    type, wLabel, wGram, amount:amt, months,
+    expiry:exp.toISOString(), date:dateVal,
+    note:document.getElementById('f_note').value.trim(),
+    prepayMonths, prepayAmt,
+    defect, hasManualWeight,
+    status:'active'
+  };
+  if(itemsData) p.items=itemsData;
+  pawns.unshift(p); save(); renderAll(); closeModal(); showReceipt(p);
+}
+
+function renderBarcode(ticket){
+  try {
+    const svg = document.createElement('svg');
+    JsBarcode(svg, ticket, {
+      format:'CODE128', width:2, height:50,
+      displayValue:true, fontSize:13, margin:4,
+      background:'#ffffff', lineColor:'#000000'
+    });
+    return svg.outerHTML;
+  } catch(e){ return ''; }
+}
+
+function showReceipt(p){
+  const monthly=p.amount*0.02;
+  const prepayLine = p.prepayMonths>0 ? `
+    <hr>
+    <div class="rrow"><span>หักดอกล่วงหน้า ${p.prepayMonths} เดือน</span><span style="color:#c00">- ${fm(p.prepayAmt)} บาท</span></div>
+    <div class="rrow"><span><b>ลูกค้าได้รับเงินจริง</b></span><span><b>${fm(p.amount-p.prepayAmt)} บาท</b></span></div>` : '';
+  const defectBadge = p.defect ? `<div class="rrow"><span>สภาพ</span><span style="color:#c00;font-weight:700">⚠️ มีตำหนิหรือชำรุด</span></div>` : '';
+  const weightGramStr = p.hasManualWeight && p.wGram ? ` (${p.wGram} กรัม)` : '';
+  document.getElementById('receiptContent').innerHTML=`
+    <h2>⚜️ ห้างทองสุดใจ</h2>
+    <div class="rsub">ใบรับจำนำ / Pawn Receipt</div>
+    <div style="text-align:center;margin:10px 0">${renderBarcode(p.ticket)}</div>
+    <hr>
+    <div class="rrow"><span>วันที่จำนำ</span><span>${fd(p.date)}</span></div>
+    <div class="rrow"><span>ชื่อลูกค้า</span><span><strong>${p.name}</strong></span></div>
+    ${p.phone?`<div class="rrow"><span>เบอร์โทร</span><span>${p.phone}</span></div>`:''}
+    <hr>
+    <div class="rrow"><span>รายการทอง</span><span><strong>${p.type}</strong></span></div>
+    <div class="rrow"><span>น้ำหนัก</span><span><strong>${p.wLabel}</strong>${weightGramStr}</span></div>
+    ${defectBadge}
+    ${p.note?`<div class="rrow"><span>หมายเหตุ</span><span>${p.note}</span></div>`:''}
+    <hr>
+    <div class="rrow"><span>เงินจำนำ</span><span><strong>${fm(p.amount)} บาท</strong></span></div>
+    ${prepayLine}
+    <hr>
+    <div class="rrow"><span>ครบกำหนด</span><span>${p.months} เดือน (${fd(p.expiry)})</span></div>
+    <div class="rtotal"><span>ดอกเบี้ยต่อเดือน</span><span>${fm(monthly)} บาท</span></div>
+    <div class="rfooter">กรุณาเก็บใบรับจำนำไว้เป็นหลักฐาน<br>ห้างทองสุดใจ ขอบคุณที่ใช้บริการ 🙏</div>
+  `;
+  document.getElementById('receiptOverlay').classList.add('show');
+}
+
+// สแกนบาร์โค้ด
+function scanBarcode(val){
+  const ticket = val.trim();
+  if(!ticket) return;
+  const p = pawns.find(x=>x.ticket===ticket) || trash.find(x=>x.ticket===ticket);
+  document.getElementById('scanInput').value='';
+  if(!p){
+    alert(`❌ ไม่พบตั๋ว: ${ticket}`);
+    return;
+  }
+  // ไฮไลท์แถวในตาราง
+  document.getElementById('searchInput').value = ticket;
+  renderFullTable();
+  // ถามว่าจะทำอะไร
+  const action = confirm(`พบตั๋ว: ${ticket}\nชื่อ: ${p.name} | ${p.type} ${p.wLabel}\nเงินต้น: ${fm(p.amount)}\n\nกด OK = เปิดใบรับจำนำ\nกด Cancel = ไปที่รายการ`);
+  if(action) showReceipt(p);
+  else { showPage('pawns'); }
+}
+
+function openRedeem(id){
+  const p=pawns.find(x=>x.id===id); if(!p) return;
+  rmMode='auto';
+  document.getElementById('rm_info').innerHTML=`<b>ตั๋ว:</b> ${p.ticket} &nbsp;|&nbsp; <b>ชื่อ:</b> ${p.name}<br><b>รายการ:</b> ${p.type} ${p.wLabel} &nbsp;|&nbsp; <b>เงินต้น:</b> ${fm(p.amount)}`;
+  document.getElementById('rm_pawn_date').textContent=fd(p.date);
+  document.getElementById('rm_date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('rm_id').value=id;
+  document.querySelectorAll('#rmModeChips .chip').forEach((c,i)=>c.classList.toggle('sel',i===0));
+  document.getElementById('rm_auto_box').style.display='block';
+  document.getElementById('rm_manual_box').style.display='none';
+  if(document.getElementById('rm_manual_amount')) document.getElementById('rm_manual_amount').value='';
+  calcRedeem();
+  document.getElementById('redeemOverlay').classList.add('show');
+}
+function calcRedeem(){
+  const id=parseInt(document.getElementById('rm_id').value);
+  const p=pawns.find(x=>x.id===id); if(!p) return;
+  const days=parseInt(document.getElementById('rm_days').value)||30;
+  const rates={5:0.005,15:0.01,21:0.015,30:0.02};
+  const rate=rates[days]||0.02;
+  const interest=p.amount*rate;
+  const total=p.amount+interest;
+  document.getElementById('rm_rate').textContent=(rate*100)+'%';
+  document.getElementById('rm_interest').textContent=fm(interest);
+  document.getElementById('rm_principal').textContent=fm(p.amount);
+  document.getElementById('rm_total').textContent=fm(total);
+}
+function confirmRedeem(){
+  const id=parseInt(document.getElementById('rm_id').value);
+  const p=pawns.find(x=>x.id===id); if(!p) return;
+  const redeemDate=document.getElementById('rm_date').value;
+  const startDate=effectiveStartDate(p);
+  let interest=0, rate=0.02, days=0;
+  if(rmMode==='auto'){
+    const r=calcAutoInterest(p.amount, startDate, redeemDate);
+    interest=r.totalInterest; days=r.totalDays;
+  } else {
+    interest=parseFloat(document.getElementById('rm_manual_amount').value)||0;
+    if(interest===0 && !confirm('ดอกเบี้ย 0 บาท ยืนยันไถ่ถอนหรือไม่?')) return;
+  }
+  const total=p.amount+interest;
+  if(confirm(`ยืนยันการไถ่ถอน\nตั๋ว: ${p.ticket} | ชื่อ: ${p.name}\nดอกเบี้ย: ${fm(interest)}\nยอดรวม: ${fm(total)}`)){
+    takeSnapshot(p.id,'ไถ่ถอน',{principal:p.amount,rate,days,interest,total,redeemDate});
+    p.status='redeemed'; p.redeemDate=redeemDate; p.redeemTotal=total;
+    save(); renderAll();
+    document.getElementById('redeemOverlay').classList.remove('show');
+    showRedeemReceipt(p, interest, total, redeemDate, days);
+  }
+}
+
+function showRedeemReceipt(p, interest, total, redeemDate, days){
+  document.getElementById('receiptContent').innerHTML=`
+    <h2>⚜️ ห้างทองสุดใจ</h2>
+    <div class="rsub">ใบไถ่ถอน / Redemption Receipt</div>
+    <div style="text-align:center;margin:10px 0">${renderBarcode(p.ticket)}</div>
+    <hr>
+    <div class="rrow"><span>วันที่ไถ่ถอน</span><span>${fd(redeemDate)}</span></div>
+    <div class="rrow"><span>เลขตั๋ว</span><span><strong>${p.ticket}</strong></span></div>
+    <div class="rrow"><span>ชื่อลูกค้า</span><span><strong>${p.name}</strong></span></div>
+    ${p.phone?`<div class="rrow"><span>เบอร์โทร</span><span>${p.phone}</span></div>`:''}
+    <hr>
+    <div class="rrow"><span>รายการทอง</span><span>${p.type} ${p.wLabel}</span></div>
+    <div class="rrow"><span>วันที่จำนำ</span><span>${fd(p.date)}</span></div>
+    <div class="rrow"><span>จำนวนวัน</span><span>${days} วัน</span></div>
+    <hr>
+    <div class="rrow"><span>เงินต้น</span><span>${fm(p.amount)}</span></div>
+    <div class="rrow"><span>ดอกเบี้ย</span><span>${fm(interest)}</span></div>
+    <div class="rtotal"><span>ยอดรวมที่ชำระ</span><span>${fm(total)}</span></div>
+    <div class="rfooter">รับทองคืนเรียบร้อย ขอบคุณที่ใช้บริการ 🙏</div>
+  `;
+  document.getElementById('receiptOverlay').classList.add('show');
+}
+function closeRedeem(){ document.getElementById('redeemOverlay').classList.remove('show'); }
+
+function redeemPawn(id){ openRedeem(id); }
+function deletePawn(id){
+  if(confirm('ย้ายรายการนี้ไปถังขยะ?')){
+    const p=pawns.find(x=>x.id===id); if(!p) return;
+    p.deletedAt=new Date().toISOString();
+    trash.unshift(p);
+    pawns=pawns.filter(x=>x.id!==id);
+    save(); renderAll();
+  }
+}
+
+// ถังขยะ
+function renderTrash(){
+  const btn=document.getElementById('emptyBtn');
+  const badge=document.getElementById('trashBadge');
+  const c=document.getElementById('trashContent');
+  if(!trash.length){
+    c.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:60px">🗑️ ถังขยะว่างเปล่า</div>';
+    btn.style.display='none'; badge.style.display='none'; return;
+  }
+  btn.style.display='inline-flex';
+  badge.style.display='inline-block'; badge.textContent=trash.length;
+  c.innerHTML=`<div class="table-card"><table>
+    <thead><tr><th>เลขตั๋ว</th><th>ชื่อลูกค้า</th><th>รายการทอง</th><th>น้ำหนัก</th><th>เงินจำนำ</th><th>วันที่จำนำ</th><th>ลบเมื่อ</th><th>จัดการ</th></tr></thead>
+    <tbody>${trash.map(p=>`<tr>
+      <td><span class="tno">${p.ticket}</span></td>
+      <td>${p.name}</td><td>${p.type}</td><td>${p.wLabel}</td>
+      <td>${fm(p.amount)}</td><td>${fd(p.date)}</td>
+      <td style="color:var(--text-muted);font-size:12px">${fd(p.deletedAt)}</td>
+      <td><div class="act-btns">
+        <button class="btn btn-edit btn-sm" onclick="restorePawn(${p.id})">↩️ คืนค่า</button>
+        <button class="btn btn-del btn-sm" onclick="permDelete(${p.id})">ลบถาวร</button>
+      </div></td>
+    </tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
+function restorePawn(id){
+  const p=trash.find(x=>x.id===id); if(!p) return;
+  delete p.deletedAt;
+  pawns.unshift(p);
+  trash=trash.filter(x=>x.id!==id);
+  save(); renderAll(); renderTrash();
+  alert('✅ คืนค่าเรียบร้อยแล้ว');
+}
+function permDelete(id){
+  if(confirm('ลบถาวร? ไม่สามารถกู้คืนได้อีก')){
+    trash=trash.filter(x=>x.id!==id);
+    save(); renderTrash();
+  }
+}
+function emptyTrash(){
+  if(confirm(`ล้างถังขยะทั้งหมด ${trash.length} รายการ?\nไม่สามารถกู้คืนได้อีก`)){
+    trash=[]; save(); renderTrash();
+  }
+}
+
+// ตัดดอก
+let cutId=null;
+function openCut(id){
+  const p=pawns.find(x=>x.id===id); if(!p) return;
+  cutId=id; cutMode='auto';
+  document.getElementById('cutInfo').innerHTML=`<b>ตั๋ว:</b> ${p.ticket} &nbsp;|&nbsp; <b>ชื่อ:</b> ${p.name}<br><b>รายการ:</b> ${p.type} ${p.wLabel} &nbsp;|&nbsp; <b>เงินต้น:</b> ${fm(p.amount)}`;
+  document.getElementById('cut_pawn_date').textContent=fd(p.date);
+  document.getElementById('cut_date').value=new Date().toISOString().split('T')[0];
+  document.querySelectorAll('#cutModeChips .chip').forEach((c,i)=>c.classList.toggle('sel',i===0));
+  document.getElementById('cut_auto_box').style.display='block';
+  document.getElementById('cut_manual_box').style.display='none';
+  if(document.getElementById('cut_manual_amount')) document.getElementById('cut_manual_amount').value='';
+  calcCut();
+  document.getElementById('cutOverlay').classList.add('show');
+}
+// คำนวณวันเริ่มต้นคิดดอกจริง (หักดอกหน้าแล้ว)
+function effectiveStartDate(p){
+  if(!p.prepayMonths || p.prepayMonths <= 0) return p.date;
+  const d = new Date(p.date);
+  d.setMonth(d.getMonth() + p.prepayMonths);
+  return d.toISOString().split('T')[0];
+}
+
+function calcAutoInterest(principal, fromDate, toDate){
+  const from = new Date(fromDate);
+  const to = new Date(toDate);
+  const totalDays = Math.max(0, Math.floor((to - from) / 86400000));
+  const fullMonths = Math.floor(totalDays / 30);
+  const remDays = totalDays % 30;
+
+  const remRate = remDays <= 5 ? 0.005
+    : remDays <= 15 ? 0.01
+    : remDays <= 21 ? 0.015
+    : 0.02;
+
+  const monthInterest = fullMonths * principal * 0.02;
+  const remInterest = remDays > 0 ? principal * remRate : 0;
+  const totalInterest = monthInterest + remInterest;
+
+  let breakdown = '';
+  if(fullMonths > 0) breakdown += `${fullMonths} เดือน × 2% = ${fm(monthInterest)} บาท<br>`;
+  if(remDays > 0) breakdown += `เศษ ${remDays} วัน × ${(remRate*100)}% = ${fm(remInterest)} บาท`;
+  if(totalDays === 0) breakdown = 'อยู่ในช่วงหักดอกหน้า — ยังไม่ต้องจ่ายดอก';
+
+  return { totalDays, fullMonths, remDays, remRate, monthInterest, remInterest, totalInterest, breakdown };
+}
+
+function monthsLabel(fullMonths, remDays){
+  if(fullMonths === 0) return '';
+  return `(${fullMonths} เดือน${remDays>0?' '+remDays+' วัน':''})`;
+}
+
+// ตัดดอก mode
+let cutMode = 'auto';
+let cutCalc = 'cycle'; // default: นับรอบเดือน
+let cutRenewMonths = 3; // default: 3 เดือน
+
+function setCutMode(el, mode){
+  document.querySelectorAll('#cutModeChips .chip').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel'); cutMode = mode;
+  document.getElementById('cut_auto_box').style.display = mode==='auto'?'block':'none';
+  document.getElementById('cut_manual_box').style.display = mode==='manual'?'block':'none';
+  document.getElementById('cut_calc_method_box').style.display = mode==='auto'?'block':'none';
+  calcCut();
+}
+
+function setCutCalc(el, method){
+  document.querySelectorAll('#cutCalcChips .chip').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel'); cutCalc = method;
+  document.getElementById('cut_cycle_info').style.display = method==='cycle'?'block':'none';
+  calcCut();
+}
+
+function pickCutRenew(el, months){
+  document.querySelectorAll('#cutRenewChips .chip').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel'); cutRenewMonths = months;
+  calcCut();
+}
+
+function openCut(id){
+  const p=pawns.find(x=>x.id===id); if(!p) return;
+  cutId=id; cutMode='auto'; cutCalc='cycle'; cutRenewMonths=3;
+  document.getElementById('cutInfo').innerHTML=`<b>ตั๋ว:</b> ${p.ticket} &nbsp;|&nbsp; <b>ชื่อ:</b> ${p.name}<br><b>รายการ:</b> ${p.type} ${p.wLabel} &nbsp;|&nbsp; <b>เงินต้น:</b> ${fm(p.amount)}`;
+  document.getElementById('cut_pawn_date').textContent=fd(p.date);
+  document.getElementById('cut_date').value=new Date().toISOString().split('T')[0];
+  // reset chips
+  document.querySelectorAll('#cutModeChips .chip').forEach((c,i)=>c.classList.toggle('sel',i===0));
+  document.querySelectorAll('#cutCalcChips .chip').forEach((c,i)=>c.classList.toggle('sel',i===1)); // นับรอบเดือน = index 1
+  document.querySelectorAll('#cutRenewChips .chip').forEach((c,i)=>c.classList.toggle('sel',i===2)); // 3 เดือน = index 2
+  document.getElementById('cut_auto_box').style.display='block';
+  document.getElementById('cut_manual_box').style.display='none';
+  document.getElementById('cut_calc_method_box').style.display='block';
+  document.getElementById('cut_cycle_info').style.display='block';
+  if(document.getElementById('cut_manual_amount')) document.getElementById('cut_manual_amount').value='';
+  calcCut();
+  document.getElementById('cutOverlay').classList.add('show');
+}
+
+// คำนวณแบบรอบเดือน (ไม่คิดเศษวัน)
+function calcCycleInterest(principal, pawnDate, toDate){
+  const from = new Date(pawnDate);
+  const to = new Date(toDate);
+
+  // หารอบที่ครบแล้ว
+  let cycles = 0;
+  let lastCycleDate = new Date(from);
+
+  while(true){
+    const next = new Date(lastCycleDate);
+    next.setMonth(next.getMonth() + 1);
+    if(next > to) break;
+    cycles++;
+    lastCycleDate = new Date(next);
+  }
+
+  // เศษวัน = วันที่ตัดดอก - วันครบรอบสุดท้าย (ไม่คิดเงิน)
+  const remDays = Math.floor((to - lastCycleDate) / 86400000);
+  const monthInterest = cycles * principal * 0.02;
+  const totalInterest = monthInterest; // ไม่บวกเศษ
+
+  // วันต่ออายุ = วันครบรอบสุดท้าย + 1 เดือน
+  const newStartDate = new Date(lastCycleDate);
+  newStartDate.setMonth(newStartDate.getMonth() + 1);
+
+  // breakdown
+  let breakdown = `${cycles} รอบ × 2% = ${fm(monthInterest)} บาท`;
+  if(remDays > 0) breakdown += `<br><span style="color:var(--text-muted);text-decoration:line-through;font-size:11px">เศษ ${remDays} วัน — ไม่คิด</span>`;
+  breakdown += `<br><span style="color:var(--blue)">▶ เริ่มต้นใหม่ ${fd(lastCycleDate.toISOString())}</span>`;
+
+  return { cycles, remDays, monthInterest, totalInterest, newStartDate, lastCycleDate, breakdown };
+}
+
+function closeCut(){ document.getElementById('cutOverlay').classList.remove('show'); cutId=null; }
+
+function calcCut(){
+  const p=pawns.find(x=>x.id===cutId); if(!p) return;
+  const toDate = document.getElementById('cut_date').value || new Date().toISOString().split('T')[0];
+  const startDate = effectiveStartDate(p);
+  const isPrepaid = new Date(toDate) <= new Date(startDate);
+  const totalDaysFromPawn = Math.max(0, Math.floor((new Date(toDate)-new Date(p.date))/86400000));
+  document.getElementById('cut_days_since').textContent = totalDaysFromPawn;
+  document.getElementById('cut_months_label').textContent = monthsLabel(Math.floor(totalDaysFromPawn/30), totalDaysFromPawn%30);
+
+  if(cutMode==='auto'){
+    let r, newExpiry;
+    if(isPrepaid){
+      r = { totalInterest:0, totalDays:0, breakdown:`⚡ ยังอยู่ในช่วงหักดอกหน้า<br>เริ่มคิดดอกจริงวันที่ ${fd(startDate)}` };
+      newExpiry = new Date(startDate); newExpiry.setMonth(newExpiry.getMonth()+p.months);
+    } else if(cutCalc==='cycle'){
+      const cr = calcCycleInterest(p.amount, startDate, toDate);
+      r = { totalInterest: cr.totalInterest, breakdown: cr.breakdown };
+      newExpiry = new Date(cr.lastCycleDate);
+      newExpiry.setMonth(newExpiry.getMonth() + cutRenewMonths);
+      document.getElementById('cut_cycle_info').innerHTML = cr.breakdown;
+      document.getElementById('cut_cycle_info').style.display = 'block';
+    } else {
+      r = calcAutoInterest(p.amount, startDate, toDate);
+      if(p.prepayMonths>0) r.breakdown=`📌 หักดอกหน้า ${p.prepayMonths} เดือน (เริ่มคิดจาก ${fd(startDate)})<br>`+r.breakdown;
+      newExpiry = new Date(toDate); newExpiry.setMonth(newExpiry.getMonth()+cutRenewMonths);
+    }
+
+    document.getElementById('cut_breakdown').innerHTML = cutCalc==='cycle' ? '' : r.breakdown;
+    document.getElementById('cut_amount').textContent = fm(r.totalInterest);
+    document.getElementById('cut_remain').textContent = fm(p.amount);
+    document.getElementById('cut_new_expiry').textContent = newExpiry ? fd(newExpiry.toISOString()) : '-';
+  } else {
+    const manual = parseFloat(document.getElementById('cut_manual_amount')?.value)||0;
+    document.getElementById('cut_manual_display').textContent = fm(manual);
+    document.getElementById('cut_remain2').textContent = fm(p.amount);
+  }
+}
+
+// ไถ่ถอน mode
+let rmMode = 'auto';
+function setRmMode(el, mode){
+  document.querySelectorAll('#rmModeChips .chip').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel'); rmMode = mode;
+  document.getElementById('rm_auto_box').style.display = mode==='auto'?'block':'none';
+  document.getElementById('rm_manual_box').style.display = mode==='manual'?'block':'none';
+  calcRedeem();
+}
+
+function calcRedeem(){
+  const id=parseInt(document.getElementById('rm_id').value);
+  const p=pawns.find(x=>x.id===id); if(!p) return;
+  const toDate = document.getElementById('rm_date').value || new Date().toISOString().split('T')[0];
+  const startDate = effectiveStartDate(p);
+  const isPrepaid = new Date(toDate) <= new Date(startDate);
+  const totalDaysFromPawn = Math.max(0, Math.floor((new Date(toDate)-new Date(p.date))/86400000));
+  document.getElementById('rm_days_since').textContent = totalDaysFromPawn;
+  document.getElementById('rm_months_label').textContent = monthsLabel(Math.floor(totalDaysFromPawn/30), totalDaysFromPawn%30);
+
+  if(rmMode==='auto'){
+    let r;
+    if(isPrepaid){
+      r = { totalInterest:0, breakdown:`⚡ ยังอยู่ในช่วงหักดอกหน้า ${p.prepayMonths} เดือน<br>เริ่มคิดดอกจริงวันที่ ${fd(startDate)}` };
+    } else {
+      r = calcAutoInterest(p.amount, startDate, toDate);
+      if(p.prepayMonths>0) r.breakdown = `📌 หักดอกหน้า ${p.prepayMonths} เดือน (เริ่มคิดจาก ${fd(startDate)})<br>` + r.breakdown;
+    }
+    document.getElementById('rm_breakdown').innerHTML = r.breakdown;
+    document.getElementById('rm_principal').textContent = fm(p.amount);
+    document.getElementById('rm_interest').textContent = fm(r.totalInterest);
+    document.getElementById('rm_total').textContent = fm(p.amount + r.totalInterest);
+  } else {
+    const manual = parseFloat(document.getElementById('rm_manual_amount')?.value)||0;
+    document.getElementById('rm_principal2').textContent = fm(p.amount);
+    document.getElementById('rm_manual_display').textContent = fm(manual);
+    document.getElementById('rm_total2').textContent = fm(p.amount + manual);
+  }
+}
+// ========== TRANSACTION LOG (ถาวร) ==========
+let txLog = JSON.parse(localStorage.getItem('sudjai_txlog')||'[]');
+
+function saveTxLog(){
+  localStorage.setItem('sudjai_txlog', JSON.stringify(txLog));
+  if(db) db.collection('sjgold').doc('txlog').set({ txLog }).catch(()=>{});
+}
+
+function takeSnapshot(pawnId, label, detail={}){
+  const p = pawns.find(x=>x.id===pawnId); if(!p) return;
+  const entry = {
+    id: Date.now(),
+    ts: new Date().toISOString(),
+    label, detail,
+    pawnId,
+    ticket: p.ticket,
+    name: p.name,
+    pawnsSnapshot: JSON.parse(JSON.stringify(pawns))
+  };
+  txLog.unshift(entry); // ใหม่สุดอยู่บน
+  if(txLog.length > 50) txLog = txLog.slice(0,50); // เก็บสูงสุด 50
+  saveTxLog();
+  updateTxBadge();
+  showUndoToast(label, entry.id);
+}
+
+function updateTxBadge(){
+  const badge = document.getElementById('txBadge');
+  if(!badge) return;
+  if(txLog.length > 0){ badge.style.display='inline-block'; badge.textContent=txLog.length; }
+  else { badge.style.display='none'; }
+  // ซ่อน globalUndoBtn เดิม (ไม่ใช้แล้ว)
+  const old = document.getElementById('globalUndoBtn');
+  if(old) old.style.display='none';
+}
+
+function showUndoToast(label, txId){
+  // ไม่แสดง toast แล้ว
+}
+
+function doUndoById(txId){
+  const entry = txLog.find(x=>x.id===txId);
+  if(!entry){ alert('ไม่พบประวัติรายการนี้แล้ว'); return; }
+  if(!confirm(`ยืนยันยกเลิก "${entry.label}" ?\nตั๋ว: ${entry.ticket} | ชื่อ: ${entry.name}\nข้อมูลจะถูกย้อนกลับไปก่อนทำรายการนี้`)) return;
+  pawns = entry.pawnsSnapshot;
+  txLog = txLog.filter(x=>x.id < txId);
+  save(); saveTxLog(); renderAll(); updateTxBadge();
+  closeDetail();
+  renderTxLog();
+  alert(`✅ ยกเลิก "${entry.label}" เรียบร้อยแล้ว`);
+}
+
+function doUndo(){ if(txLog.length) doUndoById(txLog[0].id); }
+
+function renderTxLog(){
+  const c = document.getElementById('txlogContent');
+  const btn = document.getElementById('clearTxBtn');
+  if(!txLog.length){
+    c.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:60px">📒 ยังไม่มีประวัติรายการ</div>';
+    if(btn) btn.style.display='none'; return;
+  }
+  if(btn) btn.style.display='inline-flex';
+
+  const icons={'ตัดดอก':'✂️','ไถ่ถอน':'💰','เพิ่มเงินจำนำ':'➕','ลดเงินต้น':'➖'};
+  const colors={'ตัดดอก':'var(--gold)','ไถ่ถอน':'var(--green)','เพิ่มเงินจำนำ':'#c97adc','ลดเงินต้น':'var(--blue)'};
+
+  c.innerHTML=`<div class="table-card"><table>
+    <thead><tr><th>วันที่-เวลา</th><th>ประเภท</th><th>เลขตั๋ว</th><th>ชื่อ-นามสกุล</th><th>รายละเอียด</th><th>จัดการ</th></tr></thead>
+    <tbody>${txLog.map(entry=>{
+      const p = entry.detail || {};
+      const color = colors[entry.label]||'var(--text-muted)';
+      const detail = entry.detail ? buildDetailSummary(entry.label, entry.detail) : '-';
+      return `<tr>
+        <td style="font-size:12px;color:var(--text-muted);white-space:nowrap">
+          ${new Date(entry.ts).toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric'})}<br>
+          <span style="color:var(--text-muted)">${new Date(entry.ts).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}</span>
+        </td>
+        <td><span style="font-size:15px">${icons[entry.label]||'📝'}</span> <b style="color:${color}">${entry.label}</b></td>
+        <td><span class="tno">${entry.ticket}</span></td>
+        <td>${entry.name}</td>
+        <td style="font-size:12px;color:var(--text-muted)">${detail}</td>
+        <td>
+          <div class="act-btns">
+            <button class="btn btn-outline btn-sm" style="color:var(--gold);border-color:var(--gold)" onclick="openTxDetail(${entry.id})">รายละเอียด</button>
+            <button class="btn btn-red btn-sm" onclick="doUndoById(${entry.id})">↩ ยกเลิก</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('')}
+    </tbody>
+  </table></div>
+  <div style="font-size:11px;color:var(--text-muted);padding:12px 0;text-align:center">เก็บประวัติสูงสุด 50 รายการ — การยกเลิกจะย้อนข้อมูลกลับก่อนทำรายการนั้น</div>`;
+}
+
+function buildDetailSummary(label, d){
+  if(label==='ตัดดอก') return `ดอกเบี้ย ${fm(d.interest)} บาท (${(d.rate*100)}%)`;
+  if(label==='ไถ่ถอน') return `เงินต้น ${fm(d.principal)} + ดอก ${fm(d.interest)} = ${fm(d.total)} บาท`;
+  if(label==='เพิ่มเงินจำนำ') return `${fm(d.oldAmount)} → ${fm(d.newAmount)} บาท (+${fm(d.adjAmt)})`;
+  if(label==='ลดเงินต้น') return `${fm(d.oldAmount)} → ${fm(d.newAmount)} บาท (-${fm(d.adjAmt)})`;
+  return '-';
+}
+
+function openTxDetail(txId){
+  const entry = txLog.find(x=>x.id===txId); if(!entry) return;
+  const icons={'ตัดดอก':'✂️','ไถ่ถอน':'💰','เพิ่มเงินจำนำ':'➕','ลดเงินต้น':'➖'};
+  const d = entry.detail || {};
+  const icon = icons[entry.label]||'📝';
+
+  let detailHtml = '';
+  if(entry.label==='ตัดดอก'){
+    detailHtml=`
+      <div class="crow"><span class="clbl">เงินต้น</span><span>${fm(d.principal)}</span></div>
+      <div class="crow"><span class="clbl">อัตราดอกเบี้ย</span><span>${(d.rate*100)}%</span></div>
+      <div class="crow"><span class="clbl">ช่วงวัน</span><span>${d.days} วัน</span></div>
+      <div class="crow"><span class="clbl">ดอกเบี้ยที่รับ</span><span>${fm(d.interest)}</span></div>
+      <div class="crow"><span class="clbl">ครบกำหนดใหม่</span><span>${d.newExpiry ? fd(d.newExpiry) : '-'}</span></div>`;
+  } else if(entry.label==='ไถ่ถอน'){
+    detailHtml=`
+      <div class="crow"><span class="clbl">เงินต้น</span><span>${fm(d.principal)}</span></div>
+      <div class="crow"><span class="clbl">อัตราดอกเบี้ย</span><span>${(d.rate*100)}%</span></div>
+      <div class="crow"><span class="clbl">ช่วงวัน</span><span>${d.days} วัน</span></div>
+      <div class="crow"><span class="clbl">ดอกเบี้ย</span><span>${fm(d.interest)}</span></div>
+      <div class="crow"><span class="clbl">ยอดรวมที่รับ</span><span style="color:var(--green);font-weight:700">${fm(d.total)}</span></div>`;
+  } else if(entry.label==='เพิ่มเงินจำนำ'||entry.label==='ลดเงินต้น'){
+    detailHtml=`
+      <div class="crow"><span class="clbl">เงินต้นเดิม</span><span>${fm(d.oldAmount)}</span></div>
+      <div class="crow"><span class="clbl">${entry.label==='เพิ่มเงินจำนำ'?'จำนวนที่เพิ่ม':'จำนวนที่ลด'}</span><span>${fm(d.adjAmt)}</span></div>
+      ${d.interest>0?`<div class="crow"><span class="clbl">ดอกเบี้ยที่ตัดก่อน</span><span>${fm(d.interest)}</span></div>`:''}
+      <div class="crow"><span class="clbl">เงินต้นใหม่</span><span style="color:var(--gold);font-weight:700">${fm(d.newAmount)}</span></div>
+      <div class="crow"><span class="clbl">เลขตั๋วใหม่</span><span class="tno">${d.newTicket||'-'}</span></div>
+      <div class="crow"><span class="clbl">ครบกำหนดใหม่</span><span>${d.newExpiry ? fd(d.newExpiry) : '-'}</span></div>`;
+  }
+
+  document.getElementById('txDetailContent').innerHTML=`
+    <div style="text-align:center;font-size:36px;margin-bottom:8px">${icon}</div>
+    <div style="text-align:center;font-size:18px;font-weight:700;color:var(--gold);margin-bottom:4px">${entry.label}</div>
+    <div style="text-align:center;font-size:12px;color:var(--text-muted);margin-bottom:20px">
+      ${new Date(entry.ts).toLocaleDateString('th-TH',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}
+      &nbsp;เวลา&nbsp;${new Date(entry.ts).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}
+    </div>
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;font-size:13px;line-height:2;margin-bottom:16px">
+      <b>ตั๋ว:</b> ${entry.ticket} &nbsp;|&nbsp; <b>ชื่อ:</b> ${entry.name}
+    </div>
+    <div class="calc-box">${detailHtml}</div>
+  `;
+  document.getElementById('txDetailOverlay').classList.add('show');
+  document.getElementById('txDetailUndoBtn').onclick=()=>{ closeDetail(); doUndoById(entry.id); };
+}
+function closeDetail(){ document.getElementById('txDetailOverlay').classList.remove('show'); }
+
+function clearTxLog(){
+  if(confirm(`ล้างประวัติรายการทั้งหมด ${txLog.length} รายการ?\n(ข้อมูลจริงไม่เปลี่ยน เพียงลบประวัติการยกเลิก)`)){
+    txLog=[]; saveTxLog(); updateTxBadge(); renderTxLog();
+  }
+}
+
+function confirmCut(){
+  const p=pawns.find(x=>x.id===cutId); if(!p) return;
+  const cutDate=document.getElementById('cut_date').value;
+  const startDate=effectiveStartDate(p);
+  let interest=0, rate=0.02, days=0, newExpiry;
+
+  if(cutMode==='auto'){
+    if(cutCalc==='cycle'){
+      const cr=calcCycleInterest(p.amount, startDate, cutDate);
+      interest=cr.totalInterest; days=cr.cycles*30+cr.remDays;
+      newExpiry=new Date(cr.lastCycleDate);
+      newExpiry.setMonth(newExpiry.getMonth()+cutRenewMonths);
+    } else {
+      const r=calcAutoInterest(p.amount, startDate, cutDate);
+      interest=r.totalInterest; days=r.totalDays;
+      newExpiry=new Date(cutDate); newExpiry.setMonth(newExpiry.getMonth()+cutRenewMonths);
+    }
+  } else {
+    interest=parseFloat(document.getElementById('cut_manual_amount').value)||0;
+    if(!interest){ alert('กรุณากรอกดอกเบี้ย'); return; }
+    newExpiry=new Date(cutDate); newExpiry.setMonth(newExpiry.getMonth()+p.months);
+  }
+
+  takeSnapshot(p.id,'ตัดดอก',{principal:p.amount,rate,days,interest,cutDate,newExpiry:newExpiry.toISOString()});
+  if(!p.cutHistory) p.cutHistory=[];
+  p.cutHistory.push({date:cutDate,days,rate,interest,method:cutCalc});
+  p.expiry=newExpiry.toISOString();
+  p.prepayMonths=0; p.prepayAmt=0;
+  save(); renderAll(); closeCut();
+  showCutReceipt(p, interest, cutDate, days);
+}
+
+function showCutReceipt(p, interest, cutDate, days){
+  document.getElementById('receiptContent').innerHTML=`
+    <h2>⚜️ ห้างทองสุดใจ</h2>
+    <div class="rsub">ใบตัดดอกเบี้ย / Interest Receipt</div>
+    <div style="text-align:center;margin:10px 0">${renderBarcode(p.ticket)}</div>
+    <hr>
+    <div class="rrow"><span>วันที่ตัดดอก</span><span>${fd(cutDate)}</span></div>
+    <div class="rrow"><span>เลขตั๋ว</span><span><strong>${p.ticket}</strong></span></div>
+    <div class="rrow"><span>ชื่อลูกค้า</span><span><strong>${p.name}</strong></span></div>
+    ${p.phone?`<div class="rrow"><span>เบอร์โทร</span><span>${p.phone}</span></div>`:''}
+    <hr>
+    <div class="rrow"><span>รายการทอง</span><span>${p.type} ${p.wLabel}</span></div>
+    <div class="rrow"><span>เงินต้น</span><span>${fm(p.amount)}</span></div>
+    <div class="rrow"><span>จำนวนวัน</span><span>${days} วัน</span></div>
+    <div class="rtotal"><span>ดอกเบี้ยที่ชำระ</span><span>${fm(interest)}</span></div>
+    <hr>
+    <div class="rrow"><span>ครบกำหนดใหม่</span><span><strong>${fd(p.expiry)}</strong></span></div>
+    <div class="rfooter">ขอบคุณที่ใช้บริการ ห้างทองสุดใจ 🙏</div>
+  `;
+  document.getElementById('receiptOverlay').classList.add('show');
+}
+
+// แก้ไข
+let editId=null;
+function openEdit(id){
+  const p=pawns.find(x=>x.id===id); if(!p) return;
+  editId=id;
+  document.getElementById('e_name').value=p.name;
+  document.getElementById('e_phone').value=p.phone||'';
+  document.getElementById('e_ticket').value=p.ticket;
+  document.getElementById('e_date').value=p.date;
+  document.getElementById('e_type').value=p.type;
+  document.getElementById('e_wlabel').value=p.wLabel;
+  document.getElementById('e_amount').value=p.amount;
+  document.getElementById('e_months').value=p.months;
+  document.getElementById('e_note').value=p.note||'';
+  document.getElementById('editOverlay').classList.add('show');
+}
+function closeEdit(){ document.getElementById('editOverlay').classList.remove('show'); editId=null; }
+function saveEdit(){
+  const p=pawns.find(x=>x.id===editId); if(!p) return;
+  p.name=document.getElementById('e_name').value.trim()||p.name;
+  p.phone=document.getElementById('e_phone').value.trim();
+  p.ticket=document.getElementById('e_ticket').value.trim()||p.ticket;
+  p.date=document.getElementById('e_date').value||p.date;
+  p.type=document.getElementById('e_type').value.trim()||p.type;
+  p.wLabel=document.getElementById('e_wlabel').value.trim()||p.wLabel;
+  p.amount=parseFloat(document.getElementById('e_amount').value)||p.amount;
+  p.months=parseInt(document.getElementById('e_months').value)||p.months;
+  p.note=document.getElementById('e_note').value.trim();
+  // คำนวณ expiry ใหม่
+  const exp=new Date(p.date); exp.setMonth(exp.getMonth()+p.months);
+  p.expiry=exp.toISOString();
+  save(); renderAll(); closeEdit(); alert('✅ แก้ไขเรียบร้อยแล้ว');
+}
+
+// ปรับเงิน
+let adjustId=null, adjustType='add', adjInterestMode='none', adjKeepDate='new';
+
+function setAdjInterestMode(el, mode){
+  document.querySelectorAll('#adjInterestModeChips .chip').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel'); adjInterestMode=mode;
+  document.getElementById('adj_manual_interest_box').style.display=mode==='manual'?'block':'none';
+  calcAdjust();
+}
+
+function pickKeepDate(el, mode){
+  document.querySelectorAll('#adjKeepDateChips .chip').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel'); adjKeepDate=mode;
+  const note=document.getElementById('adj_keepdate_note');
+  if(mode==='keep'){
+    note.innerHTML='▶ ดอกเบี้ยยังคิดจากวันจำนำเดิม ไม่ต้องตัดดอกก่อน เลขตั๋วเดิม';
+    // auto none เพราะไม่ตัดดอก
+    document.querySelectorAll('#adjInterestModeChips .chip').forEach((c,i)=>c.classList.toggle('sel',i===2));
+    adjInterestMode='none';
+    document.getElementById('adj_manual_interest_box').style.display='none';
+  } else {
+    note.innerHTML='▶ เริ่มต้นใหม่ ออกตั๋วใหม่ นับจากวันที่ปรับ';
+  }
+  calcAdjust();
+}
+
+function pickAdjustType(el, v){
+  document.querySelectorAll('#adjustTypeChips .chip').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel'); adjustType=v;
+  document.getElementById('adjAmountLabel').textContent=v==='add'?'จำนวนที่เพิ่ม (บาท)':'จำนวนที่ลด (บาท)';
+  document.getElementById('adj_keepdate_box').style.display=v==='add'?'block':'none';
+  document.getElementById('adj_item_box').style.display=v==='reduce'?'block':'none';
+  if(v==='reduce'){
+    adjKeepDate='new';
+    document.querySelectorAll('#adjKeepDateChips .chip').forEach((c,i)=>c.classList.toggle('sel',i===0));
+    // rebuild item list
+    const p = pawns.find(x=>x.id===adjustId);
+    if(p) buildPartialItemList(p);
+  }
+  calcAdjust();
+}
+
+function openAdjust(id){
+  const p=pawns.find(x=>x.id===id); if(!p) return;
+  adjustId=id; adjustType='add'; adjInterestMode='auto'; adjKeepDate='new';
+  document.querySelectorAll('#adjustTypeChips .chip').forEach((c,i)=>c.classList.toggle('sel',i===0));
+  document.querySelectorAll('#adjInterestModeChips .chip').forEach((c,i)=>c.classList.toggle('sel',i===0));
+  document.querySelectorAll('#adjKeepDateChips .chip').forEach((c,i)=>c.classList.toggle('sel',i===0));
+  document.getElementById('adj_manual_interest_box').style.display='none';
+  document.getElementById('adj_keepdate_box').style.display='block';
+  document.getElementById('adj_item_box').style.display='none';
+  document.getElementById('adj_keepdate_note').innerHTML='▶ เริ่มต้นใหม่ ออกตั๋วใหม่ นับจากวันที่ปรับ';
+  document.getElementById('adjAmountLabel').textContent='จำนวนที่เพิ่ม (บาท)';
+  document.getElementById('adj_date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('adj_amount').value='';
+  document.getElementById('adj_months').value='3';
+  if(document.getElementById('adj_new_item')) document.getElementById('adj_new_item').value='';
+  document.getElementById('adjustInfo').innerHTML=`<b>ตั๋ว:</b> ${p.ticket} &nbsp;|&nbsp; <b>ชื่อ:</b> ${p.name}<br><b>รายการ:</b> ${p.type} ${p.wLabel} &nbsp;|&nbsp; <b>เงินต้น:</b> ${fm(p.amount)}`;
+  document.getElementById('adj_pawn_date').textContent=fd(p.date);
+  // build item list for partial redeem
+  buildPartialItemList(p);
+  calcAdjust();
+  document.getElementById('adjustOverlay').classList.add('show');
+}
+
+function buildPartialItemList(p){
+  // parse items from type+wLabel e.g. "แหวน 1 สลึง 2 วง" → try to detect quantity
+  const listEl = document.getElementById('adj_item_list');
+  if(!listEl) return;
+  // Parse items – support comma-separated or single item
+  const rawItems = (p.type + ' ' + p.wLabel).trim();
+  // Try parse "แหวน 1 สลึง 2 วง" pattern
+  const items = parseGoldItems(p.type, p.wLabel);
+  if(!items.length){ listEl.innerHTML=''; return; }
+  listEl.innerHTML = `<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">เลือกรายการที่ต้องการไถ่ออก:</div>` +
+    items.map((it,i)=>`
+    <div class="item-remove-row">
+      <input type="checkbox" id="adj_item_chk_${i}" onchange="onPartialItemChange()">
+      <span style="flex:1">${it.label}</span>
+      <span style="color:var(--text-muted);font-size:11px">จำนวน</span>
+      <input type="number" class="item-qty" id="adj_item_qty_${i}" value="1" min="1" max="${it.qty}" oninput="onPartialItemChange()">
+      <span style="color:var(--text-muted);font-size:11px">/ ${it.qty}</span>
+    </div>`).join('');
+}
+
+function parseGoldItems(typeStr, wLabel){
+  // Detect items like: แหวน 1สลึง 2วง / สร้อยคอ 1บาท 1เส้น
+  const items = [];
+  // Match pattern: [type] [weight] [qty][unit]
+  const m = wLabel.match(/(\d+)\s*(วง|เส้น|ชิ้น|คู่|อัน)/i);
+  if(m){
+    const qty = parseInt(m[1])||1;
+    const unit = m[2];
+    const weightOnly = wLabel.replace(m[0],'').trim();
+    for(let i=1;i<=qty;i++){
+      items.push({ label:`${typeStr} ${weightOnly} วง ${i}`, qty });
+      if(i===1) { items[0].totalQty = qty; break; } // just one entry with qty
+    }
+    if(qty > 0){
+      items.length = 0;
+      items.push({ label:`${typeStr} (${weightOnly})`, qty, unit });
+    }
+  } else {
+    // single item
+    items.push({ label:`${typeStr} ${wLabel}`, qty:1, unit:'ชิ้น' });
+  }
+  return items;
+}
+
+function onPartialItemChange(){
+  const p = pawns.find(x=>x.id===adjustId); if(!p) return;
+  const items = parseGoldItems(p.type, p.wLabel);
+  let removedParts = [], remainParts = [];
+  items.forEach((it,i)=>{
+    const chk = document.getElementById(`adj_item_chk_${i}`);
+    const qtyIn = document.getElementById(`adj_item_qty_${i}`);
+    if(!chk) return;
+    const removeQty = chk.checked ? (parseInt(qtyIn?.value)||1) : 0;
+    const remainQty = it.qty - removeQty;
+    if(removeQty > 0) removedParts.push(`${p.type} ${removeQty} ${it.unit||'ชิ้น'}`);
+    if(remainQty > 0) remainParts.push(`${p.type} ${remainQty} ${it.unit||'ชิ้น'}`);
+  });
+  const newItemEl = document.getElementById('adj_new_item');
+  if(newItemEl && remainParts.length) newItemEl.value = remainParts.join(', ');
+  else if(newItemEl && removedParts.length) newItemEl.value = '';
+}
+function closeAdjust(){ document.getElementById('adjustOverlay').classList.remove('show'); adjustId=null; }
+
+function calcAdjust(){
+  const p=pawns.find(x=>x.id===adjustId); if(!p) return;
+  const adjDate=document.getElementById('adj_date').value||new Date().toISOString().split('T')[0];
+  const adjAmt=parseFloat(document.getElementById('adj_amount').value)||0;
+  const newMonths=parseInt(document.getElementById('adj_months').value)||3;
+  const startDate=effectiveStartDate(p);
+  const totalDaysFromPawn=Math.max(0,Math.floor((new Date(adjDate)-new Date(p.date))/86400000));
+  document.getElementById('adj_days_since').textContent=totalDaysFromPawn;
+  document.getElementById('adj_months_label').textContent=monthsLabel(Math.floor(totalDaysFromPawn/30),totalDaysFromPawn%30);
+
+  let interest=0, breakdown='';
+  if(adjKeepDate==='keep'){
+    interest=0; breakdown='';
+  } else if(adjInterestMode==='auto'){
+    const isPrepaid=new Date(adjDate)<=new Date(startDate);
+    if(isPrepaid){ breakdown=`⚡ ยังอยู่ในช่วงหักดอกหน้า`; interest=0; }
+    else { const r=calcAutoInterest(p.amount,startDate,adjDate); interest=r.totalInterest; breakdown=r.breakdown; }
+  } else if(adjInterestMode==='manual'){
+    interest=parseFloat(document.getElementById('adj_manual_interest')?.value)||0;
+  }
+
+  const newAmount=adjustType==='add'?p.amount+adjAmt:Math.max(0,p.amount-adjAmt);
+  const baseDate=adjKeepDate==='keep'?p.date:adjDate;
+  const newExp=new Date(baseDate); newExp.setMonth(newExp.getMonth()+newMonths);
+
+  document.getElementById('adj_breakdown').innerHTML=breakdown;
+  document.getElementById('adj_interest').textContent=fm(interest);
+  document.getElementById('adj_interest_row').style.display=interest>0?'flex':'none';
+  document.getElementById('adj_old').textContent=fm(p.amount);
+  document.getElementById('adj_change_lbl').textContent=adjustType==='add'?'+ เพิ่มเงินจำนำ':'- ลดเงินต้น';
+  document.getElementById('adj_change').textContent=fm(adjAmt);
+  document.getElementById('adj_change').style.color=adjustType==='add'?'var(--green)':'var(--red)';
+  document.getElementById('adj_new').textContent=fm(newAmount);
+  document.getElementById('adj_new_expiry').textContent=fd(newExp.toISOString());
+
+  const summaryLbl=document.getElementById('adj_summary_lbl');
+  const summaryAmt=document.getElementById('adj_summary_amt');
+  if(adjustType==='add'){
+    const net=adjAmt-interest;
+    summaryLbl.textContent=net>=0?'ร้านจ่ายให้ลูกค้า':'ลูกค้าจ่ายส่วนต่าง';
+    summaryAmt.textContent=fm(Math.abs(net));
+    summaryAmt.style.color=net>=0?'var(--green)':'var(--red)';
+  } else {
+    summaryLbl.textContent='ลูกค้าจ่ายวันนี้';
+    summaryAmt.textContent=fm(interest+adjAmt);
+    summaryAmt.style.color='var(--red)';
+  }
+}
+
+function confirmAdjust(){
+  const p=pawns.find(x=>x.id===adjustId); if(!p) return;
+  const adjAmt=parseFloat(document.getElementById('adj_amount').value)||0;
+  const adjDate=document.getElementById('adj_date').value;
+  const newMonths=parseInt(document.getElementById('adj_months').value)||3;
+  const newItemLabel=document.getElementById('adj_new_item')?.value.trim()||'';
+  let interest=0;
+  if(adjKeepDate!=='keep'){
+    if(adjInterestMode==='auto'){ const r=calcAutoInterest(p.amount,effectiveStartDate(p),adjDate); interest=r.totalInterest; }
+    else if(adjInterestMode==='manual'){ interest=parseFloat(document.getElementById('adj_manual_interest')?.value)||0; }
+  }
+  if(!adjAmt){ alert('กรุณากรอกจำนวนเงินที่ต้องการปรับ'); return; }
+  const oldAmount=p.amount;
+  const newAmount=adjustType==='add'?p.amount+adjAmt:Math.max(0,p.amount-adjAmt);
+  const typeLabel=adjustType==='add'?'เพิ่มเงินจำนำ':'ลดเงินต้น';
+  const newTicket=adjKeepDate==='keep'?p.ticket:genTicket(adjDate);
+  const baseDate=adjKeepDate==='keep'?p.date:adjDate;
+  const exp=new Date(baseDate); exp.setMonth(exp.getMonth()+newMonths);
+  takeSnapshot(p.id,typeLabel,{oldAmount,adjAmt,newAmount,interest,newTicket,newExpiry:exp.toISOString(),keepDate:adjKeepDate});
+  if(!p.adjustHistory) p.adjustHistory=[];
+  p.adjustHistory.push({date:adjDate,type:adjustType,oldAmount,adjAmt,newAmount,interest,keepDate:adjKeepDate});
+  p.ticket=newTicket;
+  p.amount=newAmount;
+  if(adjKeepDate!=='keep') p.date=adjDate;
+  p.months=newMonths;
+  p.expiry=exp.toISOString();
+  if(adjustType==='reduce'&&newItemLabel){ p.type=newItemLabel; p.wLabel=newItemLabel; }
+  save(); renderAll(); closeAdjust();
+  alert(`✅ ${typeLabel}เรียบร้อย\nเงินต้นใหม่: ${fm(newAmount)}\nครบกำหนด: ${fd(p.expiry)}\nตั๋ว: ${newTicket}`);
+}
+
+function renderRow(p){
+  const d=dl(p.expiry);
+  const dc=(p.status!=='redeemed'&&d<=7)?'color:var(--red)':'';
+  const isActive=p.status!=='redeemed';
+  const daysSince=Math.floor((new Date()-new Date(p.date))/86400000);
+  const amountStr=Number(p.amount).toLocaleString('th-TH');
+
+  // ครบกำหนด — แสดงใหม่: วันที่, เหลือ X วัน, X เดือน
+  let expiryCell;
+  if(p.status==='redeemed'){
+    expiryCell=`<span style="color:var(--text-muted)">${fd(p.expiry)}<br><small>ไถ่แล้ว</small></span>`;
+  } else if(d<0){
+    expiryCell=`<span style="color:var(--red)">${fd(p.expiry)}<br><small style="color:var(--red);font-weight:700">เกิน ${Math.abs(d)} วัน</small><br><small style="color:var(--text-muted)">${p.months} เดือน</small></span>`;
+  } else {
+    const col=d<=7?'var(--red)':d<=30?'#e8a030':'var(--green)';
+    expiryCell=`<span>${fd(p.expiry)}<br><small style="color:${col};font-weight:600">เหลือ ${d} วัน</small><br><small style="color:var(--text-muted)">${p.months} เดือน</small></span>`;
+  }
+
+  // คำนวณวันต่ออายุ (ถัดไปหลังครบกำหนด)
+  const nextRenewDate = new Date(p.expiry);
+  nextRenewDate.setMonth(nextRenewDate.getMonth() + (p.months||2));
+  const renewStr = p.status==='redeemed' ? '-' : fd(nextRenewDate.toISOString());
+  const renewDays = p.status==='redeemed' ? 0 : Math.ceil((nextRenewDate - new Date()) / 86400000);
+  const renewColor = renewDays < 0 ? 'var(--red)' : renewDays <= 14 ? '#e8a030' : 'var(--text-muted)';
+
+  // หมายเหตุ = หักดอกหน้า badge + note
+  let noteParts = [];
+  if(p.defect) noteParts.push(`<span style="background:rgba(224,85,85,0.12);color:var(--red);border:1px solid rgba(224,85,85,0.25);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:600">⚠️ มีตำหนิ</span>`);
+  if(p.prepayMonths > 0){
+    const startDate = effectiveStartDate(p);
+    const daysLeft = Math.ceil((new Date(startDate) - new Date()) / 86400000);
+    if(daysLeft > 0){
+      noteParts.push(`<span style="background:rgba(232,160,48,0.15);color:#e8a030;border:1px solid rgba(232,160,48,0.3);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:600;display:inline-block">หักดอกหน้า ${p.prepayMonths} เดือน<br>เหลือ ${daysLeft} วัน</span>`);
+    } else {
+      noteParts.push(`<span style="background:rgba(91,170,114,0.12);color:var(--green);border:1px solid rgba(91,170,114,0.3);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:600">หักดอกหน้า ${p.prepayMonths} เดือน</span>`);
+    }
+  }
+  if(p.note) noteParts.push(`<span style="font-size:12px;color:var(--text-muted)">${p.note}</span>`);
+  const noteCell = noteParts.length ? noteParts.join('<br>') : '-';
+
+  return `<tr>
+    <td><span class="tno">${p.ticket}</span></td>
+    <td>${p.name}</td>
+    <td>${p.type}</td>
+    <td>${p.wLabel}</td>
+    <td style="color:var(--gold);font-weight:600">${amountStr}</td>
+    <td>${fd(p.date)}<br><small style="color:var(--text-muted)">${daysSince} วัน</small></td>
+    <td>${expiryCell}</td>
+
+    <td style="color:var(--text-muted)">${p.phone||'-'}</td>
+    <td>${sbadge(p)}</td>
+    <td style="max-width:160px">${noteCell}</td>
+    <td>
+      <div class="act-btns">
+        ${isActive?`<button class="btn btn-cut btn-sm" onclick="openCut(${p.id})">✂️ ตัดดอก</button>`:''}
+        ${isActive?`<button class="btn btn-redeem btn-sm" onclick="openRedeem(${p.id})">💰 ไถ่ถอน</button>`:''}
+        ${isActive?`<button class="btn btn-outline btn-sm" style="color:#c97adc;border-color:#c97adc;background:rgba(201,122,220,0.1)" onclick="openAdjust(${p.id})">💱 ปรับเงิน</button>`:''}
+        <div class="more-wrap">
+          <button class="more-btn" onclick="toggleMoreMenu(this)">···</button>
+          <div class="more-menu">
+            <button class="more-menu-item" onclick="closeAllMoreMenus();openHistory(${p.id})">📜 ประวัติ</button>
+            <button class="more-menu-item" onclick="closeAllMoreMenus();showReceipt(pawns.find(x=>x.id===${p.id})||trash.find(x=>x.id===${p.id}))">🖨️ ปริ้น</button>
+            <button class="more-menu-item" onclick="closeAllMoreMenus();openEdit(${p.id})">✏️ แก้ไข</button>
+            <hr class="more-menu-sep">
+            <button class="more-menu-item danger" onclick="closeAllMoreMenus();deletePawn(${p.id})">🗑️ ลบ</button>
+          </div>
+        </div>
+      </div>
+    </td>
+  </tr>`;
+}
+
+function renderRecentTable(){
+  const q=(document.getElementById('dashSearch')?.value||'').toLowerCase();
+  const tb=document.getElementById('recentTable');
+  const src=q ? pawns.filter(p=>p.name.toLowerCase().includes(q)||p.ticket.toLowerCase().includes(q)) : pawns.slice(0,8);
+  if(!src.length){ tb.innerHTML=`<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:30px">${q?'ไม่พบรายการ':'ยังไม่มีรายการ — กด "รับจำนำใหม่" เพื่อเพิ่ม'}</td></tr>`; return; }
+  tb.innerHTML=src.map(p=>`<tr>
+    <td><span class="tno">${p.ticket}</span></td>
+    <td>${p.name}</td><td>${p.type}</td><td>${p.wLabel}</td>
+    <td>${fm(p.amount)}</td><td>${fd(p.expiry)}</td><td>${sbadge(p)}</td>
+  </tr>`).join('');
+}
+
+function renderFullTable(){
+  const q=(document.getElementById('searchInput')?.value||'').toLowerCase();
+  const tb=document.getElementById('fullTable');
+  const f=q?pawns.filter(p=>p.name.toLowerCase().includes(q)||p.ticket.toLowerCase().includes(q)):pawns;
+  if(!f.length){ tb.innerHTML=`<tr><td colspan="11" style="text-align:center;color:var(--text-muted);padding:30px">${q?'ไม่พบรายการ':'ยังไม่มีรายการ'}</td></tr>`; return; }
+  tb.innerHTML=f.map(renderRow).join('');
+}
+
+function renderStats(){
+  const today = new Date().toISOString().split('T')[0];
+  const active = pawns.filter(p=>p.status!=='redeemed');
+
+  // เกินกำหนด
+  const overdue = active.filter(p=>dl(p.expiry)<0);
+  // ใกล้หมด 7 วัน
+  const expiring = active.filter(p=>{ const d=dl(p.expiry); return d>=0&&d<=7; });
+  // ตัดดอกวันนี้
+  const cutToday = txLog.filter(e=>e.label==='ตัดดอก'&&e.ts.startsWith(today));
+  // ไถ่ถอนวันนี้
+  const redeemToday = txLog.filter(e=>e.label==='ไถ่ถอน'&&e.ts.startsWith(today));
+
+  document.getElementById('statOverdue').textContent=overdue.length;
+  document.getElementById('statExpiring').textContent=expiring.length;
+  document.getElementById('statCutToday').textContent=cutToday.length;
+  document.getElementById('statRedeemToday').textContent=redeemToday.length;
+
+  // ตารางเกินกำหนด
+  const overdueEl=document.getElementById('dash_overdue_content');
+  document.getElementById('dash_overdue_lbl').textContent=overdue.length?`${overdue.length} รายการ`:'';
+  if(!overdue.length){
+    overdueEl.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:20px;font-size:13px">✅ ไม่มีตั๋วเกินกำหนด</div>';
+  } else {
+    overdueEl.innerHTML=`<table><thead><tr><th>เลขตั๋ว</th><th>ชื่อ</th><th>เบอร์</th><th>รายการ</th><th>เงินจำนำ</th><th>ครบกำหนด</th><th>เกินมา</th><th>จัดการ</th></tr></thead>
+    <tbody>${overdue.sort((a,b)=>dl(a.expiry)-dl(b.expiry)).map(p=>`<tr>
+      <td><span class="tno">${p.ticket}</span></td>
+      <td>${p.name}</td><td style="color:var(--text-muted)">${p.phone||'-'}</td>
+      <td>${p.type}</td><td style="color:var(--gold)">${fm(p.amount)}</td>
+      <td>${fd(p.expiry)}</td>
+      <td style="color:var(--red);font-weight:700">${Math.abs(dl(p.expiry))} วัน</td>
+      <td><div class="act-btns">
+        <button class="btn btn-redeem btn-sm" onclick="openRedeem(${p.id})">ไถ่ถอน</button>
+        <button class="btn btn-cut btn-sm" onclick="openCut(${p.id})">ตัดดอก</button>
+      </div></td>
+    </tr>`).join('')}</tbody></table>`;
+  }
+
+  // ตารางใกล้หมด
+  const expiringEl=document.getElementById('dash_expiring_content');
+  document.getElementById('dash_expiring_lbl').textContent=expiring.length?`${expiring.length} รายการ`:'';
+  if(!expiring.length){
+    expiringEl.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:20px;font-size:13px">✅ ไม่มีตั๋วใกล้หมดอายุ</div>';
+  } else {
+    expiringEl.innerHTML=`<table><thead><tr><th>เลขตั๋ว</th><th>ชื่อ</th><th>เบอร์</th><th>รายการ</th><th>เงินจำนำ</th><th>ครบกำหนด</th><th>เหลือ</th><th>จัดการ</th></tr></thead>
+    <tbody>${expiring.sort((a,b)=>dl(a.expiry)-dl(b.expiry)).map(p=>{
+      const d=dl(p.expiry); const col=d<=3?'var(--red)':'#e8a030';
+      return `<tr>
+        <td><span class="tno">${p.ticket}</span></td>
+        <td>${p.name}</td><td style="color:var(--text-muted)">${p.phone||'-'}</td>
+        <td>${p.type}</td><td style="color:var(--gold)">${fm(p.amount)}</td>
+        <td>${fd(p.expiry)}</td>
+        <td style="color:${col};font-weight:700">${d} วัน</td>
+        <td><div class="act-btns">
+          <button class="btn btn-redeem btn-sm" onclick="openRedeem(${p.id})">ไถ่ถอน</button>
+          <button class="btn btn-cut btn-sm" onclick="openCut(${p.id})">ตัดดอก</button>
+        </div></td>
+      </tr>`;
+    }).join('')}</tbody></table>`;
+  }
+
+  // trash badge
+  const tb=document.getElementById('trashBadge');
+  if(trash.length){ tb.style.display='inline-block'; tb.textContent=trash.length; }
+  else { tb.style.display='none'; }
+}
+
+function initReportFilters(){
+  const years = new Set();
+  pawns.forEach(p=>{ const y=new Date(p.date).getFullYear()+543; years.add(y); });
+  const ySelect = document.getElementById('rpt_year');
+  const mSelect = document.getElementById('rpt_month');
+  if(!ySelect||!mSelect) return;
+  const curYear = ySelect.value;
+  ySelect.innerHTML='<option value="all">ทุกปี</option>';
+  [...years].sort((a,b)=>b-a).forEach(y=>{ ySelect.innerHTML+=`<option value="${y}" ${curYear==y?'selected':''}>${y}</option>`; });
+  mSelect.innerHTML='<option value="all">ทุกเดือน</option>';
+  const thMonths=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  thMonths.forEach((m,i)=>{ mSelect.innerHTML+=`<option value="${i+1}">${m}</option>`; });
+}
+
+function filterPawnsByDate(list){
+  const yr = document.getElementById('rpt_year')?.value||'all';
+  const mo = document.getElementById('rpt_month')?.value||'all';
+  return list.filter(p=>{
+    const d = new Date(p.date);
+    const pYr = d.getFullYear()+543;
+    const pMo = d.getMonth()+1;
+    if(yr!=='all' && pYr!=yr) return false;
+    if(mo!=='all' && pMo!=mo) return false;
+    return true;
+  });
+}
+
+function renderReport(){
+  initReportFilters();
+  const yr = document.getElementById('rpt_year')?.value||'all';
+  const mo = document.getElementById('rpt_month')?.value||'all';
+
+  const filtered = filterPawnsByDate(pawns);
+  const active = pawns.filter(p=>p.status!=='redeemed');
+  const filteredActive = filtered.filter(p=>p.status!=='redeemed');
+  const filteredRedeemed = filtered.filter(p=>p.status==='redeemed');
+
+  // ดอกเบี้ยที่รับแล้ว — จาก txLog
+  const earnedInterest = txLog
+    .filter(e=>{ if(yr==='all'&&mo==='all') return true;
+      const d=new Date(e.ts); const y=d.getFullYear()+543; const m=d.getMonth()+1;
+      if(yr!=='all'&&y!=yr) return false;
+      if(mo!=='all'&&m!=mo) return false; return true; })
+    .filter(e=>e.label==='ตัดดอก'||e.label==='ไถ่ถอน')
+    .reduce((s,e)=>s+(e.detail?.interest||0),0);
+
+  // Stats
+  document.getElementById('rpt_active_money').textContent=fm(active.reduce((s,p)=>s+p.amount,0));
+  document.getElementById('rpt_interest_earned').textContent=fm(earnedInterest);
+  document.getElementById('rpt_new_count').textContent=filtered.length;
+  document.getElementById('rpt_redeemed').textContent=filteredRedeemed.length;
+
+  // สรุปรายเดือน
+  const byMonth={};
+  pawns.forEach(p=>{
+    const d=new Date(p.date);
+    const key=`${d.getFullYear()+543}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    if(!byMonth[key]) byMonth[key]={label:'',newCount:0,amount:0,redeemed:0};
+    const thM=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+    byMonth[key].label=`${thM[d.getMonth()]} ${d.getFullYear()+543}`;
+    byMonth[key].newCount++;
+    byMonth[key].amount+=p.amount;
+    if(p.status==='redeemed') byMonth[key].redeemed++;
+  });
+  // ดอกเบี้ยรายเดือน
+  txLog.filter(e=>e.label==='ตัดดอก'||e.label==='ไถ่ถอน').forEach(e=>{
+    const d=new Date(e.ts);
+    const key=`${d.getFullYear()+543}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    if(!byMonth[key]) byMonth[key]={label:'',newCount:0,amount:0,redeemed:0,interest:0};
+    if(!byMonth[key].interest) byMonth[key].interest=0;
+    byMonth[key].interest+=(e.detail?.interest||0);
+  });
+  const monthTb=document.getElementById('rpt_monthly_table');
+  const monthEntries=Object.entries(byMonth).sort((a,b)=>b[0].localeCompare(a[0]));
+  monthTb.innerHTML=monthEntries.length?monthEntries.map(([k,v])=>`
+    <tr><td>${v.label}</td><td>${v.newCount} รายการ</td><td style="color:var(--gold)">${fm(v.amount)}</td>
+    <td style="color:var(--green)">${fm(v.interest||0)}</td><td>${v.redeemed} รายการ</td></tr>
+  `).join(''):'<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:24px">ยังไม่มีข้อมูล</td></tr>';
+
+  // ตามประเภท
+  const byType={};
+  filteredActive.forEach(p=>{ if(!byType[p.type]) byType[p.type]={count:0,amount:0}; byType[p.type].count++; byType[p.type].amount+=p.amount; });
+  const typeTb=document.getElementById('rpt_type_table');
+  const typeE=Object.entries(byType).sort((a,b)=>b[1].amount-a[1].amount);
+  typeTb.innerHTML=typeE.length?typeE.map(([t,d])=>`<tr><td>${t}</td><td>${d.count} รายการ</td><td style="color:var(--gold)">${fm(d.amount)}</td></tr>`).join(''):
+    '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:24px">ยังไม่มีข้อมูล</td></tr>';
+
+  // ตามน้ำหนัก
+  const byWeight={};
+  filteredActive.forEach(p=>{ if(!byWeight[p.wLabel]) byWeight[p.wLabel]={count:0,amount:0}; byWeight[p.wLabel].count++; byWeight[p.wLabel].amount+=p.amount; });
+  const weightTb=document.getElementById('rpt_weight_table');
+  const weightE=Object.entries(byWeight).sort((a,b)=>b[1].count-a[1].count);
+  weightTb.innerHTML=weightE.length?weightE.map(([w,d])=>`<tr><td>${w}</td><td>${d.count} รายการ</td><td style="color:var(--gold)">${fm(d.amount)}</td></tr>`).join(''):
+    '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:24px">ยังไม่มีข้อมูล</td></tr>';
+}
+
+function renderAll(){ renderStats(); renderRecentTable(); renderFullTable(); }
+
+// ========== Backup / Restore ==========
+function backupData(){
+  const now=new Date();
+  const dateStr=now.toLocaleDateString('th-TH',{year:'numeric',month:'2-digit',day:'2-digit'}).replace(/\//g,'-');
+  const timeStr=now.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'}).replace(':','-');
+  const filename=`sudjai-backup-${dateStr}-${timeStr}.json`;
+  const data={ version:1, exportedAt:now.toISOString(), pawns, trash };
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  alert(`✅ สำรองข้อมูลเรียบร้อย\nไฟล์: ${filename}\nรายการจำนำ: ${pawns.length} รายการ\nถังขยะ: ${trash.length} รายการ`);
+}
+
+function restoreData(event){
+  const file=event.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const data=JSON.parse(e.target.result);
+      if(!data.pawns || !Array.isArray(data.pawns)) throw new Error('ไฟล์ไม่ถูกต้อง');
+      const exportDate=data.exportedAt ? new Date(data.exportedAt).toLocaleString('th-TH') : 'ไม่ทราบ';
+      if(confirm(`พบข้อมูลสำรอง\nบันทึกเมื่อ: ${exportDate}\nรายการจำนำ: ${data.pawns.length} รายการ\nถังขยะ: ${(data.trash||[]).length} รายการ\n\n⚠️ ข้อมูลปัจจุบันจะถูกแทนที่ ยืนยันหรือไม่?`)){
+        pawns=data.pawns;
+        trash=data.trash||[];
+        save(); renderAll();
+        alert('✅ นำเข้าข้อมูลเรียบร้อยแล้ว');
+      }
+    } catch(err){
+      alert('❌ ไม่สามารถอ่านไฟล์ได้\nกรุณาเลือกไฟล์ backup ที่ถูกต้อง (.json)');
+    }
+    event.target.value='';
+  };
+  reader.readAsText(file);
+}
+
+// ประวัติ
+function openHistory(id){
+  const p=pawns.find(x=>x.id===id)||trash.find(x=>x.id===id); if(!p) return;
+
+  const cutH = p.cutHistory||[];
+  const adjH = p.adjustHistory||[];
+  const events=[];
+
+  // หาเงินต้นตอนสร้างตั๋วครั้งแรก
+  let originalAmount = p.amount;
+  if(adjH.length>0) originalAmount = adjH[0].oldAmount;
+
+  events.push({ date:p.date, icon:'🆕', type:'สร้างตั๋ว', detail:`รับจำนำ ${p.type} ${p.wLabel} — เงินต้น ${fm(originalAmount)}` });
+
+  cutH.forEach(c=>{
+    const rateLabel={0.005:'0.5%',0.01:'1%',0.015:'1.5%',0.02:'2%'}[c.rate]||'2%';
+    events.push({ date:c.date, icon:'✂️', type:'ตัดดอก', detail:`ช่วง ${c.days} วัน (${rateLabel}) — ดอกเบี้ย ${fm(c.interest)}` });
+  });
+
+  adjH.forEach(a=>{
+    const typeLabel=a.type==='add'?'เพิ่มเงินจำนำ':'ลดเงินต้น';
+    const arrow=a.type==='add'?'↑':'↓';
+    events.push({ date:a.date, icon:a.type==='add'?'➕':'➖', type:typeLabel,
+      detail:`เงินต้น ${fm(a.oldAmount)} ${arrow} ${fm(a.newAmount)} (${a.type==='add'?'+':'-'}${fm(a.adjAmt)})${a.interest>0?' + ตัดดอก '+fm(a.interest):''}` });
+  });
+
+  if(p.status==='redeemed'){
+    const redeemTotal = p.redeemTotal || (p.amount+(p.amount*0.02*p.months));
+    events.push({ date:p.redeemDate||p.expiry, icon:'🔵', type:'ไถ่ถอน', detail:`ปิดสัญญา ยอดไถ่ถอน ${fm(redeemTotal)}` });
+  }
+
+  events.sort((a,b)=>new Date(a.date)-new Date(b.date));
+
+  const html=`
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:20px;font-size:13px;line-height:2">
+      <b>ตั๋ว:</b> ${p.ticket} &nbsp;|&nbsp; <b>ชื่อ:</b> ${p.name} &nbsp;|&nbsp; <b>รายการ:</b> ${p.type} ${p.wLabel}<br>
+      <b>เงินต้นปัจจุบัน:</b> ${fm(p.amount)} &nbsp;|&nbsp; <b>ครบกำหนด:</b> ${fd(p.expiry)} &nbsp;|&nbsp; ${sbadge(p)}
+    </div>
+    <div style="position:relative">
+      ${events.map((e,i)=>`
+        <div style="display:flex;gap:14px">
+          <div style="display:flex;flex-direction:column;align-items:center;min-width:36px">
+            <div style="width:36px;height:36px;border-radius:50%;background:var(--bg3);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${e.icon}</div>
+            ${i<events.length-1?`<div style="width:2px;flex:1;background:var(--border);margin:4px 0;min-height:24px"></div>`:''}
+          </div>
+          <div style="padding-bottom:${i<events.length-1?'8':'0'}px;padding-top:6px">
+            <div style="font-size:11px;color:var(--text-muted)">${fd(e.date)}</div>
+            <div style="font-weight:600;color:var(--text);margin-top:1px">${e.type}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${e.detail}</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  document.getElementById('historyContent').innerHTML=html;
+  document.getElementById('historyOverlay').classList.add('show');
+}
+function closeHistory(){ document.getElementById('historyOverlay').classList.remove('show'); }
+
+// ========== More Menu Dropdown ==========
+function toggleMoreMenu(btn){
+  const menu = btn.nextElementSibling;
+  const isOpen = menu.classList.contains('open');
+  closeAllMoreMenus();
+  if(!isOpen){
+    menu.classList.add('open');
+    // close when clicking outside
+    setTimeout(()=>{
+      document.addEventListener('click', closeOnOutside, {once:true});
+    }, 10);
+  }
+}
+function closeAllMoreMenus(){
+  document.querySelectorAll('.more-menu.open').forEach(m=>m.classList.remove('open'));
+}
+function closeOnOutside(e){
+  if(!e.target.closest('.more-wrap')) closeAllMoreMenus();
+}
+
+// ========== Login / Auth ==========
+let settings = JSON.parse(localStorage.getItem('sudjai_settings')||'{}');
+if(!settings.username) settings.username = 'admin';
+if(!settings.password) settings.password = '1234';
+if(!settings.shopName) settings.shopName = 'ห้างทองสุดใจ';
+if(!settings.goldPrice) settings.goldPrice = '44,250';
+function saveSettingsData(){ localStorage.setItem('sudjai_settings', JSON.stringify(settings)); }
+
+// ========== Firebase Google Auth ==========
+const ALLOWED_UIDS = [
+  '7CqhvohITKW9lDAIGXN1G3bnkyD3',
+  'cxizcjVZNNfZdl4CxgZbfimhKLi2'
+];
+
+const G_SVG = `<svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg> เข้าสู่ระบบด้วย Google`;
+
+function signInWithGoogle(){
+  if(!auth){ alert('Firebase Auth ยังไม่พร้อม'); return; }
+  const btn=document.getElementById('btnGoogleSignIn');
+  if(btn){ btn.disabled=true; btn.textContent='⏳ กำลังเชื่อมต่อ...'; }
+  const provider = new firebase.auth.GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
+  auth.signInWithPopup(provider).catch(err=>{
+    if(btn){ btn.disabled=false; btn.innerHTML=G_SVG; }
+    if(err.code !== 'auth/popup-closed-by-user')
+      alert('เข้าสู่ระบบไม่สำเร็จ: ' + err.message);
+  });
+}
+
+function signOutAndRetry(){
+  if(auth) auth.signOut();
+}
+
+function doLogout(){
+  if(confirm('ออกจากระบบ?')){
+    if(auth) auth.signOut();
+  }
+}
+
+function showApp(user){
+  const su=document.getElementById('sidebarUser');
+  const sn=document.getElementById('sidebarName');
+  const se=document.getElementById('sidebarEmail');
+  const sa=document.getElementById('sidebarAvatar');
+  if(su) su.style.display='block';
+  if(sn) sn.textContent=user.displayName||'';
+  if(se) se.textContent=user.email||'';
+  if(sa && user.photoURL){ sa.src=user.photoURL; sa.style.display='block'; }
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('mainApp').style.display='flex';
+}
+
+function showLoginScreen(wrongUser){
+  document.getElementById('mainApp').style.display='none';
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('loginLoading').style.display='none';
+  const su=document.getElementById('sidebarUser');
+  if(su) su.style.display='none';
+  if(wrongUser){
+    document.getElementById('loginGoogleBox').style.display='none';
+    document.getElementById('loginWrongEmail').style.display='block';
+  } else {
+    document.getElementById('loginGoogleBox').style.display='block';
+    document.getElementById('loginWrongEmail').style.display='none';
+    const btn=document.getElementById('btnGoogleSignIn');
+    if(btn){ btn.disabled=false; btn.innerHTML=G_SVG; }
+  }
+}
+
+function initAuth(){
+  if(!auth){
+    document.getElementById('loginLoading').style.display='none';
+    document.getElementById('loginGoogleBox').style.display='block';
+    return;
+  }
+  auth.onAuthStateChanged(user=>{
+    document.getElementById('loginLoading').style.display='none';
+    if(user){
+      if(ALLOWED_UIDS.includes(user.uid)){
+        showApp(user);
+        setSyncStatus('sync','กำลังเชื่อมต่อ...');
+        renderAll(); updateTxBadge();
+        startFirebaseListeners();
+      } else {
+        const wu=document.getElementById('loginWrongUser');
+        if(wu) wu.innerHTML=`
+          <div style="text-align:left">
+            <div style="font-size:13px;font-weight:600">${user.displayName||''}</div>
+            <div style="font-size:11px;color:var(--text-muted)">${user.email||''}</div>
+          </div>`;
+        showLoginScreen(true);
+        // sign out immediately so they can retry with correct account
+        auth.signOut();
+      }
+    } else {
+      showLoginScreen(false);
+    }
+  });
+}
+
+function renderSettings(){
+  document.getElementById('cfg_shop_name').value = settings.shopName||'';
+  document.getElementById('cfg_shop_phone').value = settings.shopPhone||'';
+  document.getElementById('cfg_shop_addr').value = settings.shopAddr||'';
+  document.getElementById('cfg_gold_price').value = settings.goldPrice||'';
+  document.getElementById('cfg_username').value = settings.username||'admin';
+  document.getElementById('cfg_new_pass').value = '';
+  document.getElementById('cfg_confirm_pass').value = '';
+}
+
+function saveSettings(){
+  settings.shopName = document.getElementById('cfg_shop_name').value.trim()||settings.shopName;
+  settings.shopPhone = document.getElementById('cfg_shop_phone').value.trim();
+  settings.shopAddr = document.getElementById('cfg_shop_addr').value.trim();
+  settings.goldPrice = document.getElementById('cfg_gold_price').value.trim();
+  saveSettingsData();
+  updateGoldPrice();
+}
+
+function updateGoldPrice(){
+  const price = settings.goldPrice;
+  if(price){
+    const priceEl = document.querySelector('.gpw .price');
+    if(priceEl) priceEl.textContent = '฿' + Number(price).toLocaleString('th-TH');
+  }
+}
+
+function changePassword(){
+  const newUser = document.getElementById('cfg_username').value.trim();
+  const newPass = document.getElementById('cfg_new_pass').value;
+  const confirm2 = document.getElementById('cfg_confirm_pass').value;
+  if(!newUser){ alert('กรุณากรอกชื่อผู้ใช้'); return; }
+  if(!newPass){ alert('กรุณากรอกรหัสผ่านใหม่'); return; }
+  if(newPass !== confirm2){ alert('❌ รหัสผ่านไม่ตรงกัน'); return; }
+  if(newPass.length < 4){ alert('รหัสผ่านต้องมีอย่างน้อย 4 ตัวอักษร'); return; }
+  settings.username = newUser;
+  settings.password = newPass;
+  saveSettingsData();
+  document.getElementById('cfg_new_pass').value = '';
+  document.getElementById('cfg_confirm_pass').value = '';
+  alert('✅ บันทึกรหัสผ่านใหม่เรียบร้อยแล้ว');
+}
+
+function clearAllData(){
+  if(confirm('⚠️ ล้างข้อมูลทั้งหมด?\nรายการจำนำ ถังขยะ และประวัติรายการจะถูกลบ\nไม่สามารถกู้คืนได้!')){
+    if(confirm('ยืนยันอีกครั้ง — ลบข้อมูลทั้งหมดจริงหรือ?')){
+      pawns=[]; trash=[]; txLog=[];
+      save(); saveTxLog(); renderAll(); updateTxBadge();
+      if(db){
+        db.collection('sjgold').doc('pawns').set({pawns:[],trash:[]}).catch(()=>{});
+        db.collection('sjgold').doc('txlog').set({txLog:[]}).catch(()=>{});
+      }
+      alert('✅ ล้างข้อมูลทั้งหมดเรียบร้อยแล้ว');
+    }
+  }
+}
+
+// Init
+document.getElementById('todayDate').textContent=new Date().toLocaleDateString('th-TH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+document.getElementById('updateTime').textContent=new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
+// Auth จะเป็นคนเรียก renderAll + startFirebaseListeners หลัง login สำเร็จ
+initAuth();
+</script>
+
+<!-- Modal ไถ่ถอน -->
+<div class="modal-overlay" id="redeemOverlay">
+<div class="modal" style="width:440px">
+  <div class="modal-head">
+    <h2>💰 ไถ่ถอน</h2>
+    <button class="close-btn" onclick="closeRedeem()">✕</button>
+  </div>
+  <div class="modal-body">
+    <div id="rm_info" style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;font-size:13px;line-height:2"></div>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <div style="background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.3);border-radius:8px;padding:10px 14px;font-size:13px;flex:1">
+        📅 จำนำ: <strong id="rm_pawn_date">-</strong>
+      </div>
+      <div style="background:rgba(91,143,170,0.12);border:1px solid rgba(91,143,170,0.3);border-radius:8px;padding:10px 14px;font-size:13px;flex:1;text-align:center">
+        🕐 <strong id="rm_days_since" style="color:var(--blue);font-size:17px">0</strong> วัน
+        <span style="color:var(--text-muted);font-size:11px" id="rm_months_label"></span>
+      </div>
+    </div>
+    <input type="hidden" id="rm_id">
+    <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:12px">
+      <div>
+        <label>วันที่ไถ่</label>
+        <input type="date" id="rm_date" onchange="calcRedeem()">
+      </div>
+      <div style="display:flex;flex-direction:column;justify-content:flex-end">
+        <label>ดอกเบี้ย</label>
+        <div class="chips" id="rmModeChips">
+          <button class="chip sel" onclick="setRmMode(this,'auto')">⚡ อัตโนมัติ</button>
+          <button class="chip" onclick="setRmMode(this,'manual')">✏️ กำหนดเอง</button>
+        </div>
+      </div>
+      <div class="span2" id="rm_auto_box">
+        <div class="calc-box">
+          <div id="rm_breakdown" style="font-size:12px;color:var(--text-muted);margin-bottom:8px;line-height:1.9"></div>
+          <div class="crow"><span class="clbl">เงินต้น</span><span id="rm_principal">0</span></div>
+          <div class="crow"><span class="clbl">ดอกเบี้ยรวม (อัตโนมัติ)</span><span id="rm_interest" style="color:var(--gold)">0</span></div>
+          <div class="crow"><span class="clbl">ยอดรวมที่ต้องชำระ</span><span id="rm_total">0</span></div>
+        </div>
+      </div>
+      <div class="span2" id="rm_manual_box" style="display:none">
+        <label>กำหนดดอกเบี้ยเอง (บาท)</label>
+        <input type="number" id="rm_manual_amount" placeholder="0" oninput="calcRedeem()">
+        <div style="margin-top:8px" class="calc-box">
+          <div class="crow"><span class="clbl">เงินต้น</span><span id="rm_principal2">0</span></div>
+          <div class="crow"><span class="clbl">ดอกเบี้ยที่กำหนด</span><span id="rm_manual_display">0</span></div>
+          <div class="crow"><span class="clbl">ยอดรวมที่ต้องชำระ</span><span id="rm_total2">0</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-foot">
+    <button class="btn btn-outline" onclick="closeRedeem()">ยกเลิก</button>
+    <button class="btn btn-gold" onclick="confirmRedeem()">✅ ยืนยันไถ่ถอน</button>
+  </div>
+</div>
+</div>
+
+<!-- Modal ประวัติ -->
+<div class="modal-overlay" id="historyOverlay">
+<div class="modal" style="width:520px">
+  <div class="modal-head">
+    <h2>📜 ประวัติรายการ</h2>
+    <button class="close-btn" onclick="closeHistory()">✕</button>
+  </div>
+  <div class="modal-body" style="max-height:70vh;overflow-y:auto">
+    <div id="historyContent"></div>
+  </div>
+  <div class="modal-foot">
+    <button class="btn btn-gold" onclick="closeHistory()">ปิด</button>
+  </div>
+</div>
+</div>
+
+<!-- Modal รายละเอียดประวัติ -->
+<div class="modal-overlay" id="txDetailOverlay">
+<div class="modal" style="width:440px">
+  <div class="modal-head">
+    <h2>📋 รายละเอียดรายการ</h2>
+    <button class="close-btn" onclick="closeDetail()">✕</button>
+  </div>
+  <div class="modal-body">
+    <div id="txDetailContent"></div>
+  </div>
+  <div class="modal-foot">
+    <button class="btn btn-outline" onclick="closeDetail()">ปิด</button>
+    <button class="btn btn-red" id="txDetailUndoBtn">↩ ยกเลิกรายการนี้</button>
+  </div>
+</div>
+</div>
+
+</body>
+</html>
